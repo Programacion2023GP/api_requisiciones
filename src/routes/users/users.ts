@@ -8,9 +8,15 @@ router.get('/', async(_req, res) => {
     res.send({  data });
 });
 
-router.post('/', async(_req, res) => {
-    await addUser()
-    res.send({ message: 'Welcome to the API!' });
+router.post('/', async (req, res) => {
+    try {
+        console.log('Datos recibidos:', req.body);
+        await addUser(req.body);
+        res.status(201).send({ message: 'Usuario agregado correctamente' });
+    } catch (error) {
+        console.error('Error al procesar la solicitud:', error);
+        res.status(500).send({ error: 'Error en el servidor' });
+    }
 });
 
 export default router;
