@@ -12,7 +12,7 @@ export const GetDepartamentos= async () => {
     const departamentos = await Departamentos.findAll({
         where: {
             // Aquí pones las condiciones
-            Dependencia: 'Presidencia', // Ejemplo: filtrar por 'Dependencia'
+            dependence: 'Presidencia', // Ejemplo: filtrar por 'Dependencia'
             // Puedes añadir más condiciones, si lo necesitas
         }
     });

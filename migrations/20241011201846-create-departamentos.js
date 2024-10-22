@@ -2,17 +2,17 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('departamentos', {
+    await queryInterface.createTable('groups', {
       id: {
         type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },
-      Departamento: {
+      group: {
         type: Sequelize.STRING(255),
         allowNull: false,
       },
-      Dependencia: {
+      dependence: {
         type: Sequelize.STRING(255),
         allowNull: false,
       },
@@ -30,6 +30,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('departamentos');
+    await queryInterface.dropTable('groups');
   }
 };

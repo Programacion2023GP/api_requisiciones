@@ -2,16 +2,17 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../db'; 
 import bcrypt from 'bcrypt';
+import Departamentos from './departamentos';
 
 // Definir los atributos del modelo
 interface UserAttributes {
     id?: number;
-    Name: string;
-    PaternalName: string;
-    MaternalName?: string | null;  // MaternalName puede ser string o null
-    Email: string;
-    Password: string;  // Cambiado a requerido
-    Departamento: number; // Asegúrate de que sea un número
+    name: string;
+    paternalname: string;
+    maternalname?: string | null;  // MaternalName puede ser string o null
+    email: string;
+    password: string;  // Cambiado a requerido
+    id_group: number; // Asegúrate de que sea un número
 }
 
 // Opciones para crear un nuevo usuario (al crear, el ID es opcional)
@@ -20,16 +21,16 @@ interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
 // Definir la clase del modelo con los tipos
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     public id!: number;
-    public Name!: string;
-    public PaternalName!: string;
-    public MaternalName!: string | null;  // Definirla como string | null
-    public Email!: string;
-    public Password!: string; // Cambiado a requerido
-    public Departamento!: number; // Corregido a number
+    public name!: string;
+    public paternalname!: string;
+    public maternalname!: string | null;  // Definirla como string | null
+    public email!: string;
+    public password!: string; // Cambiado a requerido
+    public id_group!: number; // Corregido a number
 
     // Método para verificar la contraseña
     public validatePassword(password: string): boolean {
-        return bcrypt.compareSync(password, this.Password);
+        return bcrypt.compareSync(password, this.password);
     }
 }
 
@@ -40,29 +41,29 @@ User.init(
             autoIncrement: true,
             primaryKey: true,
         },
-        Name: {
+        name: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        PaternalName: {
+        paternalname: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        MaternalName: {
+        maternalname: {
             type: DataTypes.STRING,
             allowNull: true, // Puede ser null
         },
-        Email: {
+        email: {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true,
         },
-        Password: {
+        password: {
             type: DataTypes.STRING,
             allowNull: false,
             defaultValue: "123456" // Esto puede ser reemplazado por un hash
         },
-        Departamento: {
+        id_group: {
             type: DataTypes.INTEGER, // Cambiado a INTEGER
             allowNull: false,
         },
@@ -74,14 +75,18 @@ User.init(
         timestamps: true,
         hooks: {
             beforeSave: async (user: User) => {
-                if (user.changed('Password')) {
+                if (user.changed('password')) {
                     // Hashea la contraseña antes de guardar
                     const salt = await bcrypt.genSalt(10);
-                    user.Password = await bcrypt.hash(user.Password, salt);
+                    user.password = await bcrypt.hash(user.password, salt);
                 }
             },
         },
     }
 );
-
+User.belongsTo(Departamentos, {
+    foreignKey: 'id_group', // clave foránea en User
+    targetKey: 'id', // clave primaria en Departamentos
+    as: 'departamento' // opcional, un alias para la relación
+});
 export default User;

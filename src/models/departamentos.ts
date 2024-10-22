@@ -1,12 +1,13 @@
 // src/models/user.ts
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../db'; 
+import User from './user';
 
 // Definir los atributos del modelo
 interface UserAttributes {
     id?: number;
-    Departamento: string;
-    Dependencia: string;
+    group: string;
+    dependence: string;
 
 }
 
@@ -16,8 +17,8 @@ interface UserCreationAttributes extends Optional<UserAttributes, 'id'> {}
 // Definir la clase del modelo con los tipos
 class Departamentos extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     public id!: number;
-    public Departamento!: string;
-    public Dependencia!: string;
+    public group!: string;
+    public dependence!: string;
    
 }
 
@@ -28,11 +29,11 @@ Departamentos.init(
             autoIncrement: true,
             primaryKey: true,
         },
-        Departamento: {
+        group: {
             type: DataTypes.STRING,
             allowNull: false,
         },
-        Dependencia: {
+        dependence: {
             type: DataTypes.STRING,
             allowNull: false,
         },
@@ -41,9 +42,13 @@ Departamentos.init(
     {
         sequelize,
         modelName: 'Departamentos',
-        tableName: 'departamentos',
+        tableName: 'groups',
         timestamps: true,
     }
 );
-
+// Departamentos.hasMany(User, {
+//     foreignKey: 'id_group', // clave foránea en User
+//     sourceKey: 'id', // clave primaria en Departamentos
+//     as: 'usuarios' // opcional, un alias para la relación
+// });
 export default Departamentos;

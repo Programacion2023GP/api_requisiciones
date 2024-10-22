@@ -9,27 +9,27 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      Name: {
+      name: {
         type: Sequelize.STRING
       },
-      PaternalName: {
+      paternalName: {
         type: Sequelize.STRING
       },
-      MaternalName: {
+      maternalName: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      Email: {
+      email: {
         type: Sequelize.STRING,
         unique: true
       },
-      Password: {
+      password: {
         type: Sequelize.STRING
       },
-      Departamento: {
+      id_group: {
         type: Sequelize.INTEGER, // Cambia a INTEGER para coincidir con el tipo de id en departamentos
         references: {
-          model: 'departamentos', // Nombre de la tabla relacionada
+          model: 'groups', // Nombre de la tabla relacionada
           key: 'id'               // Columna a la que hace referencia
         },
         onUpdate: 'CASCADE',      // Actualiza en cascada si se modifica el departamento
