@@ -44,6 +44,7 @@ export const GetUsers = async () => {
             'paternalname',
             'maternalname',
              'id_group',
+             'active',
             'email',
             [
                 Sequelize.fn('CONCAT', 

@@ -13,6 +13,7 @@ interface UserAttributes {
     email: string;
     password: string;  // Cambiado a requerido
     id_group: number; // Asegúrate de que sea un número
+    active:boolean;
 }
 
 // Opciones para crear un nuevo usuario (al crear, el ID es opcional)
@@ -27,7 +28,7 @@ class User extends Model<UserAttributes, UserCreationAttributes> implements User
     public email!: string;
     public password!: string; // Cambiado a requerido
     public id_group!: number; // Corregido a number
-
+    public active!:boolean;
     // Método para verificar la contraseña
     public validatePassword(password: string): boolean {
         return bcrypt.compareSync(password, this.password);
@@ -67,6 +68,11 @@ User.init(
             type: DataTypes.INTEGER, // Cambiado a INTEGER
             allowNull: false,
         },
+        active:{
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,  // Por defecto, todos los usuarios son activos
+            allowNull: false,  // No puede ser null
+        }
     },
     {
         sequelize,

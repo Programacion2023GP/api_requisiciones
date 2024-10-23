@@ -26,12 +26,17 @@ module.exports = {
       password: {
         type: Sequelize.STRING
       },
+      active:{
+        type: Sequelize.BOOLEAN,
+        defaultValue: true,
+      },
       id_group: {
         type: Sequelize.INTEGER, // Cambia a INTEGER para coincidir con el tipo de id en departamentos
         references: {
           model: 'groups', // Nombre de la tabla relacionada
           key: 'id'               // Columna a la que hace referencia
         },
+        
         onUpdate: 'CASCADE',      // Actualiza en cascada si se modifica el departamento
         onDelete: 'SET NULL',     // Establece NULL si se elimina el departamento
         allowNull: true            // Permitir nulos si no se requiere un departamento

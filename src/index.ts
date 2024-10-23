@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors"; // Importa el middleware cors
 import UserRoutes from './routes/users/users';
+import StatusRoutes from './routes/status/status';
+
 import DepartamentosRoutes from './routes/departamentos/departamentos';
 import sequelize from './db'; 
 
@@ -23,6 +25,7 @@ app.get("/ping", (_req, res) => {
 
 app.use('/api/users', UserRoutes);
 app.use('/api/departamentos', DepartamentosRoutes);
+app.use('/api/status', StatusRoutes);
 
 app.listen(Port, async () => {
     console.log(`Server is running on port ${Port}`);
