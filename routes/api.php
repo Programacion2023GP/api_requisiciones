@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DepartamentosController;
+use App\Http\Controllers\MenuController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -34,5 +35,9 @@ Route::prefix('/auth')->group(function (){
 });
 Route::prefix('/departamentos')->group(function (){
     Route::get('/index', [DepartamentosController::class, 'index']);
+
+});
+Route::prefix('/menu')->group(function (){
+    Route::get('/index/{id}', [MenuController::class, 'index']);
 
 });
