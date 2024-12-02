@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\DepartamentosController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\MenuUserController;
+use App\Http\Controllers\RequisicionesController;
+use App\Http\Controllers\TiposController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -17,27 +20,32 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
-Route::prefix('/users')->group(function (){
-    Route::get('/index', [UsersController::class, 'index']);
-    Route::post('/createOrUpdate/{id?}', [UsersController::class, 'createOrUpdate']);
-    Route::delete('/delete/{id?}', [UsersController::class, 'ChangeStatus']);
 
-    
-});
-Route::prefix('/auth')->group(function (){
+Route::prefix('/auth')->group(function () {
     Route::post('/login', [UsersController::class, 'login']);
     Route::post('/logout', [UsersController::class, 'logout'])->middleware('auth:sanctum');
-
-
 });
-Route::prefix('/departamentos')->group(function (){
-    Route::get('/index', [DepartamentosController::class, 'index']);
+Route::prefix('/menu')->group(function () {});
 
-});
-Route::prefix('/menu')->group(function (){
-    Route::get('/index/{id}', [MenuController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
 
+    Route::prefix('/menuuser')->group(function () {
+        Route::get('/index/{id?}', [MenuUserController::class, 'index']);
+        Route::post('/create/{id}', [MenuUserController::class, 'create']);
+    });
+    Route::prefix('/departamentos')->group(function () {
+        Route::get('/index', [DepartamentosController::class, 'index']);
+    });
+    Route::prefix('/tipos')->group(function () {
+        Route::get('/index', [TiposController::class, 'index']);
+    });
+    Route::prefix('/users')->group(function () {
+        Route::get('/index', [UsersController::class, 'index']);
+        Route::post('/createOrUpdate/{id?}', [UsersController::class, 'createOrUpdate']);
+        Route::delete('/delete/{id?}', [UsersController::class, 'ChangeStatus']);
+    });
+    Route::prefix('/requisiciones')->group(function () {
+        Route::post('/create', [RequisicionesController::class, 'create']);
+    });
+    
 });

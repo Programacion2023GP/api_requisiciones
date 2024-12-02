@@ -151,6 +151,6 @@ class UsersController extends Controller
             $token->delete();
         });
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['message' => 'cerrando sesión']);
     }
 }

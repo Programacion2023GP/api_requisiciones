@@ -3,18 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\ApiResponse;
-use App\Models\Departamento;
+use App\Models\Tipos;
 use Exception;
 use Illuminate\Http\Request;
 
-class DepartamentosController extends Controller
+class TiposController extends Controller
 {
-    public function index(){
+    public function index()
+    {
         try {
-            $users = Departamento::orderBy('Nombre_Departamento','asc')->get();
+            $users = Tipos::where('Activo', 1)
+              
+                ->orderBy('Descripcion', 'asc')
+                ->get();
+
             return ApiResponse::success($users, 'Usuarios recuperados con éxito');
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return ApiResponse::error('Error al recuperar los usuarios', 500);
         }
     }

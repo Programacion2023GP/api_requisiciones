@@ -36,4 +36,5 @@ class MenuController extends Controller
             return ApiResponse::error('Error al recuperar el Menu', 500);
         }
     }
+   
 }
