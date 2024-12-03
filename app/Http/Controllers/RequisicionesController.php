@@ -16,18 +16,24 @@ class RequisicionesController extends Controller
     {
         try {
             $requisicion = Requisiciones::find($request->Usuario);
+
             if (!$requisicion) {
                 // Actualizar usuario   
                 $requisicion = new Requisiciones();
+                $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
+                $requisicion->IDRequisicion = $folio + 1;
             }
-            $centro_costo = Departamento::where('IDDepartamento',$request->IDDepartamento)->first();
-            
+            $centro_costo = Departamento::where('IDDepartamento', $request->IDDepartamento)->first();
+
             $requisicion->Ejercicio = date('Y');
             //centro de costo
             $requisicion->FechaCaptura = date('Y-m-d H:i:s');
             $requisicion->FUM = date('Y-m-d H:i:s');
 
             $requisicion->UsuarioCaptura = Auth::user()->Usuario;
+            $requisicion->UsuarioCa = Auth::user()->Usuario;
+            $requisicion->AutEspecial =  $request->IDTipo ==5 || $request->IDTipo ==6 || $request->IDTipo ==7 ? 1:0;
+
             $requisicion->IDDepartamento = $request->IDDepartamento;
             $requisicion->Solicitante = $request->Solicitante;
             $requisicion->Observaciones = $request->Observaciones;

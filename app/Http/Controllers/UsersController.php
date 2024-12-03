@@ -67,6 +67,7 @@ class UsersController extends Controller
             $user = User::find($request->IDUsuario);
             if ($user) {
                 // Actualizar usuario
+
                 $user->update($request->all());
                 $message = 'Usuario actualizado con éxito';
             } else {
