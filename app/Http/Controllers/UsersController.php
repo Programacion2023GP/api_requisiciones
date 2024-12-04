@@ -109,7 +109,7 @@ class UsersController extends Controller
             }
 
             // Para otros errores, mostramos un mensaje genérico
-            Log::error($e->getMessage());
+            // Log::error($e->getMessage());
             return ApiResponse::error('El usuario no se pudo crear. Intenta nuevamente.', 500);
         }
     }
