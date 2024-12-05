@@ -80,18 +80,22 @@ class   RequisicionesController extends Controller
             return ApiResponse::error("La requisición no se pudo crear", 500);
         }
     }
-    public function index()
+    public function index(Request $request)
     {
         try {
-            ini_set('memory_limit', '2048M');  // O cualquier valor mayor
+                        ini_set('memory_limit', '2048M');  // O cualquier valor mayor
 
-    $requisiciones = DB::table('Requisiciones_View')->paginate(200); // 50 registros por página
-            // return "ddd";
-            return ApiResponse::success($requisiciones, 'Requisición creada con exito');
+            
+            // Realiza la consulta con paginación
+            $requisiciones = DB::table('Requisiciones_View')->paginate(500);
+    
+            // Devuelve la respuesta en formato JSON
+            return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
-            return ApiResponse::error("La requisición no se pudo crear", 500);
+            return ApiResponse::error("No se pudieron obtener las requisiciones", 500);
         }
     }
+    
     
 }
