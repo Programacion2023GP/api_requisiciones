@@ -87,7 +87,7 @@ class   RequisicionesController extends Controller
 
             
             // Realiza la consulta con paginación
-            $requisiciones = DB::table('Requisiciones_View')->paginate(500);
+            $requisiciones = DB::table('Requisiciones_View')->limit(500)->get();
     
             // Devuelve la respuesta en formato JSON
             return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
