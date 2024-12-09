@@ -16,24 +16,44 @@ use Illuminate\Support\Facades\DB;
 
 class UsersController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $users = User::where('Activo', 1)
-                ->select(
-                    'cat_usuarios.*', // Selecciona todas las columnas de la tabla cat_usuarios
-                    'autorizadores.Permiso_Autorizar',
-                    'autorizadores.Permiso_Asignar',
-                    'autorizadores.Permiso_Cotizar',
-                    'autorizadores.Permiso_Orden_Compra',
-                    'autorizadores.Permiso_Surtir'
+            if ($request->sql) {
+                $users = User::where('Activo', 1)
+                    ->select(
+                        'cat_usuarios.*', // Selecciona todas las columnas de la tabla cat_usuarios
+                        'autorizadores.Permiso_Autorizar',
+                        'autorizadores.Permiso_Asignar',
+                        'autorizadores.Permiso_Cotizar',
+                        'autorizadores.Permiso_Orden_Compra',
+                        'autorizadores.Permiso_Surtir'
 
 
 
-                )
-                ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
-                ->orderBy('IDUsuario', 'desc')
-                ->get();
+                    )
+                    ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
+                    ->whereRaw($request->sql)
+                    ->orderBy('IDUsuario', 'desc')
+                    ->get();
+            } else {
+                $users = User::where('Activo', 1)
+                    ->select(
+                        'cat_usuarios.*', // Selecciona todas las columnas de la tabla cat_usuarios
+                        'autorizadores.Permiso_Autorizar',
+                        'autorizadores.Permiso_Asignar',
+                        'autorizadores.Permiso_Cotizar',
+                        'autorizadores.Permiso_Orden_Compra',
+                        'autorizadores.Permiso_Surtir'
+
+
+
+                    )
+                    ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
+                    ->orderBy('IDUsuario', 'desc')
+                    ->get();
+            }
+
 
             return ApiResponse::success($users, 'Usuarios recuperados con éxito');
         } catch (Exception $e) {
@@ -118,28 +138,27 @@ class UsersController extends Controller
         try {
             // Obtener las credenciales del request
             $credentials = $request->only('Usuario', 'Password');
-            
+
             if (!isset($credentials['Usuario']) || !isset($credentials['Password'])) {
                 return ApiResponse::error('Credenciales incompletas', 400);
             }
-    
+
             $user = User::where('Usuario', $credentials['Usuario'])->first();
-    
+
             if ($user && $user->Password === $credentials['Password']) {
                 $token = $user->createToken('YourAppName')->plainTextToken;
                 return ApiResponse::success([
                     "token" => $token
                 ], 'Bienvenido al sistema');
             }
-    
+
             return ApiResponse::error('Credenciales incorrectas', 401);
-    
         } catch (Exception $e) {
             return ApiResponse::error('El usuario no se pudo autenticar. Intenta nuevamente.', 401);
         }
     }
-    
-    
+
+
 
 
 

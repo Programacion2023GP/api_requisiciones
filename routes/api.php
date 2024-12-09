@@ -46,7 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/requisiciones')->group(function () {
         Route::post('/create', [RequisicionesController::class, 'create']);
-        Route::get('/index', [RequisicionesController::class, 'index']);
+        Route::post('/index', [RequisicionesController::class, 'index']);
         
     });
     

@@ -35,7 +35,7 @@ class   RequisicionesController extends Controller
 
             $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             $requisicion->UsuarioCa = Auth::user()->Usuario;
-            $requisicion->AutEspecial =  $request->IDTipo ==5 || $request->IDTipo ==6 || $request->IDTipo ==7 ? 1:0;
+            $requisicion->AutEspecial =  $request->IDTipo == 5 || $request->IDTipo == 6 || $request->IDTipo == 7 ? 1 : 0;
 
             $requisicion->IDDepartamento = $request->IDDepartamento;
             $requisicion->Solicitante = $request->Solicitante;
@@ -44,22 +44,22 @@ class   RequisicionesController extends Controller
             $requisicion->Status = "CA";
             $requisicion->centro_costo = $centro_costo->Centro_Costo;
 
-            
-            
+
+
             $requisicion->save();
             $datos = $request->all();
 
             foreach ($datos as $key => $valor) {
                 if (strpos($key, 'Descripcion') === 0) {
                     Log::info("Clave de descripción encontrada: $key");
-            
+
                     $index = substr($key, 11); // Obtener índice numérico
                     $cantidadKey = 'Cantidad' . $index;
-            
+
                     if ($request->has($cantidadKey)) {
                         $cantidad = $request->input($cantidadKey);
                         Log::info("Requisicion aqui $requisicion");
-            
+
                         $detailsRequisitionController = new DetailsRequisitionController();
                         $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
                     } else {
@@ -67,8 +67,8 @@ class   RequisicionesController extends Controller
                     }
                 }
             }
-            
-    
+
+
 
             DB::commit(); // Confirma la transacción
 
@@ -83,11 +83,30 @@ class   RequisicionesController extends Controller
     public function index(Request $request)
     {
         try {
-                        ini_set('memory_limit', '2048M');  // O cualquier valor mayor
-
-            
+            ini_set('memory_limit', '2048M'); // O cualquier valor mayor
+    
+            // Verificar si se ha pasado una consulta SQL
+            if ($request->filled('sql')) { // Usar filled() para asegurar que el parámetro no esté vacío
+                // Escapar la consulta SQL para evitar inyecciones SQL
+                $sql = DB::raw($request->sql); // Escapa los caracteres especiales de la consulta
+    
+                // Intentar ejecutar la consulta
+                $query = DB::table('Requisiciones_View')->whereRaw($sql);
+    
+                // Imprimir la consulta SQL para ver qué hace
+                Log::info('Consulta SQL: ' . $query->toSql());
+                
+                $requisiciones = $query->get();
+                
+                if (!$requisiciones) {
+                    throw new \Exception('No se pudieron obtener las requisiciones');
+                }
+            } else {
+                $requisiciones = DB::table('Requisiciones_View')->get();
+            }
+    
             // Realiza la consulta con paginación
-            $requisiciones = DB::table('Requisiciones_View')->limit(500)->get();
+            // ...
     
             // Devuelve la respuesta en formato JSON
             return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
@@ -96,6 +115,5 @@ class   RequisicionesController extends Controller
             return ApiResponse::error("No se pudieron obtener las requisiciones", 500);
         }
     }
-    
     
 }
