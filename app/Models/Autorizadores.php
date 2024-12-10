@@ -16,6 +16,7 @@ class Autorizadores extends Model
         'Permiso_Asignar',
         'Permiso_Cotizar',
         'Permiso_Orden_Compra',
+        'Permiso_Surtir'
      
         
     ];
@@ -23,6 +24,10 @@ class Autorizadores extends Model
 
     protected $hidden = [
         'Usuario',
+        'Autorizador',
+        "FechaAlta",
+        "FUM",
+        "UsuarioFUM", 
         // 'remember_token',
     ];
 }

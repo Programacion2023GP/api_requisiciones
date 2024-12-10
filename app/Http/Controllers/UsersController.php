@@ -9,6 +9,7 @@ use App\Models\User;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\AutorizadoresController;
+use App\Models\Autorizadores;
 use App\Models\Director;
 use ErrorException;
 use Illuminate\Support\Facades\Auth;
@@ -144,10 +145,12 @@ class UsersController extends Controller
             }
 
             $user = User::where('Usuario', $credentials['Usuario'])->first();
+            $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
 
             if ($user && $user->Password === $credentials['Password']) {
                 $token = $user->createToken('YourAppName')->plainTextToken;
                 return ApiResponse::success([
+                    "permisos"=>$permisos,
                     "token" => $token
                 ], 'Bienvenido al sistema');
             }
