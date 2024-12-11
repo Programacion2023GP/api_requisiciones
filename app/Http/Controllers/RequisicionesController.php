@@ -84,35 +84,84 @@ class   RequisicionesController extends Controller
     {
         try {
             ini_set('memory_limit', '2048M'); // O cualquier valor mayor
-    
+
             // Verificar si se ha pasado una consulta SQL
             if ($request->filled('sql')) { // Usar filled() para asegurar que el parámetro no esté vacío
                 // Escapar la consulta SQL para evitar inyecciones SQL
                 $sql = DB::raw($request->sql); // Escapa los caracteres especiales de la consulta
-    
+
                 // Intentar ejecutar la consulta
                 $query = DB::table('Requisiciones_View')->whereRaw($sql);
-    
+
                 // Imprimir la consulta SQL para ver qué hace
                 Log::info('Consulta SQL: ' . $query->toSql());
-                
+
                 $requisiciones = $query->get();
-                
+
                 if (!$requisiciones) {
                     throw new \Exception('No se pudieron obtener las requisiciones');
                 }
             } else {
                 $requisiciones = DB::table('Requisiciones_View')->get();
             }
-    
+
             // Realiza la consulta con paginación
             // ...
-    
+
             // Devuelve la respuesta en formato JSON
             return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
             return ApiResponse::error("No se pudieron obtener las requisiciones", 500);
+        }
+    }
+    public function update(Request $request)
+    {
+        try {
+            // Buscar la requisición por su ID
+            $requisicion = Requisiciones::find($request->id);
+    
+            // Si no se encuentra la requisición, retornar un error
+            if (!$requisicion) {
+                return ApiResponse::error("Requisición no encontrada", 404);
+            }
+    
+            // Actualizar la requisición según el estado
+            switch ($request->Status) {
+                case "AU":
+                    $requisicion->UsuarioAU = Auth::user()->Usuario;
+                    $requisicion->FechaAutorizacion = now(); // Usar función nativa para la fecha actual
+                    $requisicion->FechaVoBo = now();
+                    break;
+                case "AS":
+                    $requisicion->UsuarioAS = Auth::user()->Usuario;
+                    $requisicion->FechaAsignacion = now();
+                    break;
+                case "RE":
+                    $requisicion->UsuarioRE = Auth::user()->Usuario;
+                    $requisicion->FechaRealizacion = now();
+                    break;
+                case "OC":
+                    $requisicion->UsuarioOC = Auth::user()->Usuario;
+                    $requisicion->FechaOrdenCompra = now();
+                    break;
+                    case "CO":
+                        $requisicion->UsuarioCO = Auth::user()->Usuario;
+                        $requisicion->FechaCotizacion= now();
+                        break;
+                default:
+                    return ApiResponse::error("Estado inválido", 400);
+            }
+    
+            // Guardar los cambios en la base de datos
+            $requisicion->Status =  $request->Status;
+            $requisicion->update();
+            
+            return ApiResponse::success($requisicion, 'Requisición actualizada con éxito');
+        } catch (Exception $e) {
+            DB::rollBack(); // Revertir cambios si hay un error
+            Log::error($e->getMessage()); // Registrar el mensaje de error
+            return ApiResponse::error("La requisición no se pudo actualizar", 500);
         }
     }
     
