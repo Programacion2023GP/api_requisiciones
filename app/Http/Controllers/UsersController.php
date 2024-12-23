@@ -103,7 +103,7 @@ class UsersController extends Controller
             }
 
             // Lógica de roles
-            if ($request->Rol === 'COMPRAS') {
+            if ($request->Rol === 'AUTORIZADOR') {
                 (new AutorizadoresController())->create($request);
             } elseif ($request->Rol === 'REQUISITOR') {
                 (new RequisitorController())->create($request);

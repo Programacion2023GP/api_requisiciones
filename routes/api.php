@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AutorizadoresController;
 use App\Http\Controllers\DepartamentosController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuUserController;
@@ -48,7 +49,17 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [RequisicionesController::class, 'create']);
         Route::post('/index', [RequisicionesController::class, 'index']);
         Route::put('/update', [RequisicionesController::class, 'update']);
+        Route::post('/show', [RequisicionesController::class, 'show']);
+        Route::post('/products ', [RequisicionesController::class, 'products']);
+        Route::post('/asignedAutorized ', [RequisicionesController::class, 'asignedAutorized']);
 
+        
+    });
+    Route::prefix('/autorizadores')->group(function () {
+        Route::get('/cotizadores', [AutorizadoresController::class, 'indexAutorizadores']);
+     
     });
     
+
 });
+// http://127.0.0.1:8000/api/requisiciones/products

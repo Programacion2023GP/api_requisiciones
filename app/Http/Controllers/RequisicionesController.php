@@ -80,18 +80,40 @@ class   RequisicionesController extends Controller
             return ApiResponse::error("La requisición no se pudo crear", 500);
         }
     }
+    public function asignedAutorized(Request $request){
+        try {
+            //code...
+            $requisicion = Requisiciones::where("Id", $request->id)->first(); // Cambiar get() por first()
+            if(!$requisicion){
+                return ApiResponse::error("Requisición no encontrada", 404);
+            } else {
+                // Asignar valores
+                $requisicion->UsuarioAS = $request->Usuario;
+                $requisicion->FechaAsignacion = now();
+                $requisicion->Status = "AS";
+    
+                // Actualizar el registro
+                $requisicion->save(); // Usar save() en lugar de update()
+                
+                return ApiResponse::success($requisicion, 'Requisición asignada con éxito');
+            }
+        } catch (Exception $e) {
+            // Log::error($e->getMessage());
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+    
     public function index(Request $request)
     {
         try {
             ini_set('memory_limit', '2048M'); // O cualquier valor mayor
-
             // Verificar si se ha pasado una consulta SQL
             if ($request->filled('sql')) { // Usar filled() para asegurar que el parámetro no esté vacío
                 // Escapar la consulta SQL para evitar inyecciones SQL
                 $sql = DB::raw($request->sql); // Escapa los caracteres especiales de la consulta
 
                 // Intentar ejecutar la consulta
-                $query = DB::table('Requisiciones_View')->whereRaw($sql);
+                $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql);
 
                 // Imprimir la consulta SQL para ver qué hace
                 Log::info('Consulta SQL: ' . $query->toSql());
@@ -102,7 +124,7 @@ class   RequisicionesController extends Controller
                     throw new \Exception('No se pudieron obtener las requisiciones');
                 }
             } else {
-                $requisiciones = DB::table('Requisiciones_View')->get();
+                $requisiciones = DB::table('requisiciones_view')->distinct()->get();
             }
 
             // Realiza la consulta con paginación
@@ -120,12 +142,12 @@ class   RequisicionesController extends Controller
         try {
             // Buscar la requisición por su ID
             $requisicion = Requisiciones::find($request->id);
-    
+
             // Si no se encuentra la requisición, retornar un error
             if (!$requisicion) {
                 return ApiResponse::error("Requisición no encontrada", 404);
             }
-    
+
             // Actualizar la requisición según el estado
             switch ($request->Status) {
                 case "AU":
@@ -145,18 +167,18 @@ class   RequisicionesController extends Controller
                     $requisicion->UsuarioOC = Auth::user()->Usuario;
                     $requisicion->FechaOrdenCompra = now();
                     break;
-                    case "CO":
-                        $requisicion->UsuarioCO = Auth::user()->Usuario;
-                        $requisicion->FechaCotizacion= now();
-                        break;
+                case "CO":
+                    $requisicion->UsuarioCO = Auth::user()->Usuario;
+                    $requisicion->FechaCotizacion = now();
+                    break;
                 default:
                     return ApiResponse::error("Estado inválido", 400);
             }
-    
+
             // Guardar los cambios en la base de datos
             $requisicion->Status =  $request->Status;
             $requisicion->update();
-            
+
             return ApiResponse::success($requisicion, 'Requisición actualizada con éxito');
         } catch (Exception $e) {
             DB::rollBack(); // Revertir cambios si hay un error
@@ -164,5 +186,19 @@ class   RequisicionesController extends Controller
             return ApiResponse::error("La requisición no se pudo actualizar", 500);
         }
     }
-    
+
+    public function show(Request $request)
+    {
+        try {
+        } catch (Exception $e) {
+        }
+    }
+    public function products (Request $request){
+        try {
+            $products = DB::table('det_requisicion')->where('Ejercicio',$request->Ejercicio)->where('IDRequisicion',$request->IDRequisicion)->get();
+            return ApiResponse::success($products, 'Productos obtenidos con éxito');
+        } catch (\Exception $e) {
+            return ApiResponse::error("No se pudieron obtener los productos", 500);
+        }
+    }
 }
