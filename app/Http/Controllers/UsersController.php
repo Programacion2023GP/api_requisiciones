@@ -149,8 +149,29 @@ class UsersController extends Controller
 
             if ($user && $user->Password === $credentials['Password']) {
                 $token = $user->createToken('YourAppName')->plainTextToken;
+                $menuPermisos = DB::select("
+                SELECT 
+                cm.Id,
+                cm.IdMenu,
+                    cm.Menu,
+                    cm.MenuPadre,
+                    cm.Icon,
+            
+                CASE 
+                    WHEN rmu.Permiso='S' THEN 1
+                    ELSE 0
+                END AS EstadoPermiso
+            FROM 
+                cat_menus cm
+            LEFT JOIN 
+                relmenuusuario rmu ON rmu.IdMenu = cm.IdMenu AND rmu.Usuario = ?
+            WHERE cm.active =1
+            ORDER BY 
+                cm.IdMenu;
+                    ", [$credentials['Usuario']]);
                 return ApiResponse::success([
-                    "permisos"=>$permisos,
+                    "permisos" => $permisos,
+                    "menuPermiso" => $menuPermisos,
                     "token" => $token
                 ], 'Bienvenido al sistema');
             }

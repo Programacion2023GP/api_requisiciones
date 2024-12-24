@@ -33,6 +33,7 @@ FROM
     cat_menus cm
 LEFT JOIN 
     relmenuusuario rmu ON rmu.IdMenu = cm.IdMenu AND rmu.Usuario = ?
+WHERE cm.active =1
 ORDER BY 
     cm.IdMenu;
 

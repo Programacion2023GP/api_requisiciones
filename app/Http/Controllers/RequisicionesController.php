@@ -113,7 +113,7 @@ class   RequisicionesController extends Controller
                 $sql = DB::raw($request->sql); // Escapa los caracteres especiales de la consulta
 
                 // Intentar ejecutar la consulta
-                $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql);
+                $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql)->orderBy('Id','desc');
 
                 // Imprimir la consulta SQL para ver qué hace
                 Log::info('Consulta SQL: ' . $query->toSql());

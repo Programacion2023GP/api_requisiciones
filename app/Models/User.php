@@ -49,7 +49,7 @@ class User extends Authenticatable
     public $timestamps = false; // Desactiva el manejo automático de created_at y updated_at
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'Password' => 'hashed',
+        // 'Password' => 'hashed',
     ];
     protected static function boot()
     {
