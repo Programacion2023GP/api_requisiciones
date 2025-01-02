@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [RequisicionesController::class, 'create']);
         Route::post('/index', [RequisicionesController::class, 'index']);
         Route::put('/update', [RequisicionesController::class, 'update']);
+        Route::put('/vobo', [RequisicionesController::class, 'vobo']);
         Route::post('/show', [RequisicionesController::class, 'show']);
         Route::post('/products ', [RequisicionesController::class, 'products']);
         Route::post('/asignedAutorized ', [RequisicionesController::class, 'asignedAutorized']);

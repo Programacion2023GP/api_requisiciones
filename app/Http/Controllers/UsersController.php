@@ -133,7 +133,7 @@ class UsersController extends Controller
             // Log::error($e->getMessage());
             return ApiResponse::error('El usuario no se pudo crear. Intenta nuevamente.', 500);
         }
-    }
+    }   
     public function login(Request $request)
     {
         try {
@@ -172,7 +172,10 @@ class UsersController extends Controller
                 return ApiResponse::success([
                     "permisos" => $permisos,
                     "menuPermiso" => $menuPermisos,
-                    "token" => $token
+                    "token" => $token,
+                    "group" => $user->IDDepartamento,
+                    "name" => $user->NombreCompleto,
+
                 ], 'Bienvenido al sistema');
             }
 
