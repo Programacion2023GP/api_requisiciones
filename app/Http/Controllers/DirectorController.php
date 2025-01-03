@@ -25,7 +25,6 @@ class DirectorController extends Controller
             $director->save();
             return ApiResponse::success($director, 'Autorizador creado con exito');
         } catch (Exception $e) {
-            Log::error($e); // Mejor usar Log::error() para registrar errores
             return ApiResponse::error('El autorizador no se pudo crear', 500);
         }
     }

@@ -4,6 +4,7 @@ use App\Http\Controllers\AutorizadoresController;
 use App\Http\Controllers\DepartamentosController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuUserController;
+use App\Http\Controllers\ProvedoresController;
 use App\Http\Controllers\RequisicionesController;
 use App\Http\Controllers\TiposController;
 use App\Http\Controllers\UsersController;
@@ -58,6 +59,12 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/autorizadores')->group(function () {
         Route::get('/cotizadores', [AutorizadoresController::class, 'indexAutorizadores']);
+     
+    });
+    Route::prefix('/provedores')->group(function () {
+        Route::get('/index', [ProvedoresController::class, 'index']);
+        Route::post('/create', [ProvedoresController::class, 'create']);
+
      
     });
     
