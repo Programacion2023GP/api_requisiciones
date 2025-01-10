@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AutorizadoresController;
 use App\Http\Controllers\DepartamentosController;
+use App\Http\Controllers\DetailsRequisicionesController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuUserController;
 use App\Http\Controllers\ProvedoresController;
@@ -52,22 +53,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/update', [RequisicionesController::class, 'update']);
         Route::put('/vobo', [RequisicionesController::class, 'vobo']);
         Route::post('/show', [RequisicionesController::class, 'show']);
+
         Route::post('/products ', [RequisicionesController::class, 'products']);
         Route::post('/asignedAutorized ', [RequisicionesController::class, 'asignedAutorized']);
-
-        
+    });
+    Route::prefix('/requisicionesdetails')->group(function () {
+        Route::put('/update', [DetailsRequisicionesController::class, 'update']);
+  
     });
     Route::prefix('/autorizadores')->group(function () {
         Route::get('/cotizadores', [AutorizadoresController::class, 'indexAutorizadores']);
-     
     });
     Route::prefix('/provedores')->group(function () {
         Route::get('/index', [ProvedoresController::class, 'index']);
         Route::post('/create', [ProvedoresController::class, 'create']);
-
-     
+        Route::put('/update', [ProvedoresController::class, 'update']);
     });
-    
-
 });
+Route::get('/hola', function() {
+    return "saludos";
+});
+
 // http://127.0.0.1:8000/api/requisiciones/products

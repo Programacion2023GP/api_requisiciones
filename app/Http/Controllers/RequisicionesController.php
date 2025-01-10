@@ -241,6 +241,8 @@ class   RequisicionesController extends Controller
         } catch (Exception $e) {
         }
     }
+
+    
     public function products(Request $request)
     {
         try {
