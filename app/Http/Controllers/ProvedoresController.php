@@ -56,7 +56,7 @@ class ProvedoresController extends Controller
                 }
                 // Si no se encontró coincidencia con ninguna empresa
                 if ($paso == 0) {
-                    $proveedor->vigencia = $proveedor->Comprado == 0 ?"Nuevo" : "Vencido";
+                    $proveedor->vigencia = $proveedor->Comprado == 0 ? "Nuevo" : "Vencido";
                     array_push($empresasConRfcCoincidente, $proveedor);
                 }
             }
@@ -64,6 +64,11 @@ class ProvedoresController extends Controller
 
             // Verificar si se encontraron coincidencias
             if (count($empresasConRfcCoincidente) > 0) {
+                $empresasConRfcCoincidente = collect($empresasConRfcCoincidente)
+                    ->unique(function ($item) {
+                        return $item->RFC;
+                    })
+                    ->values();
                 return response()->json([
                     'data' => $empresasConRfcCoincidente
                 ]);

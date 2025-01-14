@@ -7,6 +7,7 @@ use App\Models\Details;
 use App\Models\Requisiciones;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DetailsRequisicionesController extends Controller
 {
@@ -14,7 +15,7 @@ class DetailsRequisicionesController extends Controller
     {
         try {
             // Obtener los registros que coincidan con el IDRequisicion
-            $detalles = Details::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->get();
+            $detalles = Details::where('IDDetalle', $request->IDDetalle)->first();
 
             // Campos a actualizar si están presentes en la solicitud
             $camposPermitidos = [
@@ -37,23 +38,37 @@ class DetailsRequisicionesController extends Controller
                 'PrecioUnitarioConIva3',
                 'Retenciones3',
             ];
-
+            if ($request->newStatus == "OC") {
+                $camposPermitidos = [
+                    'Proveedor',
+                ];
+            }
             // Iterar sobre cada registro y actualizar
-            foreach ($detalles as $detalle) {
+     
                 foreach ($camposPermitidos as $campo) {
                     if ($request->has($campo)) {
-                        $detalle->{$campo} = $request->{$campo};
+                        $detalles->{$campo} = $request->{$campo};
                     }
-                }
-                $detalle->save();
+                
+                $detalles->save();
             }
-            $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->first();
-            $requisicion->ObservacionesCot = $request->ObservacionesCot;
-            $requisicion->Status=$request->newStatus;
-            $requisicion->save();
-            return ApiResponse::success($detalles, 'Se han insertado los datos correctamente');
+            // $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->first();
+            // if ($request->newStatus == "CO") {
+            //     $requisicion->ObservacionesCot = $request->ObservacionesCot;
+            // }
+            // $requisicion->Status = $request->newStatus;
+            // $requisicion->save();
+            return ApiResponse::success($detalles, $request->newStatus == "CO"? 'Se han insertado la cotización correctamente ':'la orden de compra se genero correctamente');
         } catch (Exception $e) {
-            return ApiResponse::error("no se pudieron insertar los provedores en la requisición", 500);
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+    public function search(Request $request){
+        try {
+           $details = DB::table('det_requisicion')->where('IDDetalle',$request->IDDetalle)->first();
+            return ApiResponse::success($details, 'Detalles de requisiciones encontrados con éxito');
+        } catch (Exception $e) {
+            return ApiResponse::error($e->getMessage(), 500);
         }
     }
 }

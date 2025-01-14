@@ -174,6 +174,8 @@ class UsersController extends Controller
                     "menuPermiso" => $menuPermisos,
                     "token" => $token,
                     "group" => $user->IDDepartamento,
+                    "role" => $user->Rol,
+
                     "name" => $user->NombreCompleto,
 
                 ], 'Bienvenido al sistema');

@@ -147,16 +147,19 @@ class   RequisicionesController extends Controller
                 // Ejecutar la consulta SQL
                 $sql = DB::raw($consulta);
                 $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql)->orderBy('Id', 'desc');
-                $requisiciones = $query->get();
+            
 
-                if ($requisiciones->isEmpty()) {
-                    throw new \Exception('No se pudieron obtener las requisiciones');
-                }
+             
             } else {
                 // Si no se pasa una consulta SQL personalizada, se obtienen todas las requisiciones
-                $requisiciones = DB::table('requisiciones_view')->distinct()->get();
+                $query = DB::table('requisiciones_view')->distinct();
             }
-
+            $requisiciones = $query
+            ->get()
+            ->unique(function ($item) {
+                return $item->IDRequisicion . '-' . $item->Ejercicio;
+            })
+            ->values(); // Reindexa los datos
             // Devuelve la respuesta en formato JSON
             return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
         } catch (\Exception $e) {
@@ -199,6 +202,12 @@ class   RequisicionesController extends Controller
                     $requisicion->UsuarioCO = Auth::user()->Usuario;
                     $requisicion->FechaCotizacion = now();
                     break;
+                case "SU":
+
+                    break;
+                    case "CA":
+
+                        break;
                 default:
                     return ApiResponse::error("Estado inválido", 400);
             }
@@ -238,11 +247,26 @@ class   RequisicionesController extends Controller
     public function show(Request $request)
     {
         try {
+             $requisicion = DB::table('requisiciones_view')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->first();
+             $details = DB::table('det_requisicion')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
+             return ApiResponse::success(["requisicion"=>$requisicion,"details"=>$details], 'Productos obtenidos con éxito');
+
         } catch (Exception $e) {
+            return ApiResponse::error("No se pudieron obtener los productos", 500);
+
+        }
+    }
+    public function detailsRequisicion(Request $request)
+    {
+        try {
+            $products = DB::table('products_details')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
+            
+            return ApiResponse::success($products, 'Productos obtenidos con éxito');
+        } catch (\Exception $e) {
+            return ApiResponse::error("No se pudieron obtener los productos", 500);
         }
     }
 
-    
     public function products(Request $request)
     {
         try {
