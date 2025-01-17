@@ -133,7 +133,7 @@ class UsersController extends Controller
             // Log::error($e->getMessage());
             return ApiResponse::error('El usuario no se pudo crear. Intenta nuevamente.', 500);
         }
-    }   
+    }
     public function login(Request $request)
     {
         try {
@@ -169,12 +169,42 @@ class UsersController extends Controller
             ORDER BY 
                 cm.IdMenu;
                     ", [$credentials['Usuario']]);
+                $route = ""; // Valor predeterminado
+
+                // Orden de prioridad con la clave como el menú original y el valor como el menú relacionado
+
+                if ($route == "") {
+                    # code...
+                    foreach ($menuPermisos as $mP) {
+                        if ((trim($mP->IdMenu) == "Listado") && $mP->EstadoPermiso == 1) {
+                            $route = "MnuRequisiciones";
+                        }
+                    }
+                }
+                if ($route == "") {
+
+                    foreach ($menuPermisos as $mP) {
+                        if (trim($mP->IdMenu) == "CatProveedores" && $mP->EstadoPermiso == 1) {
+                            $route = "CatProveedores";
+                        }
+                    }
+                }
+                if ($route == "") {
+
+                    foreach ($menuPermisos as $mP) {
+                        if ((trim($mP->IdMenu) == "Usuarios" || trim($mP->IdMenu) ==  "RequisicionesAdd") && $mP->EstadoPermiso == 1) {
+                            $route = "MnuSeguridad";
+                        }
+                    }
+                }
+
                 return ApiResponse::success([
                     "permisos" => $permisos,
                     "menuPermiso" => $menuPermisos,
                     "token" => $token,
                     "group" => $user->IDDepartamento,
                     "role" => $user->Rol,
+                    "redirect" => "/" . $route,
 
                     "name" => $user->NombreCompleto,
 
@@ -183,7 +213,8 @@ class UsersController extends Controller
 
             return ApiResponse::error('Credenciales incorrectas', 401);
         } catch (Exception $e) {
-            return ApiResponse::error('El usuario no se pudo autenticar. Intenta nuevamente.', 401);
+
+            return ApiResponse::error('El usuario no se pudo autenticar o no tienes permisos', 401);
         }
     }
 
