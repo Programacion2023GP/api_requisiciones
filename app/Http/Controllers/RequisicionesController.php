@@ -184,6 +184,8 @@ class   RequisicionesController extends Controller
                 case "AU":
                     $requisicion->UsuarioAU = Auth::user()->Usuario;
                     $requisicion->FechaAutorizacion = now(); // Usar función nativa para la fecha actual
+                    $requisicion->Director = Auth::user()->NombreCompleto;
+
                     $requisicion->FechaVoBo = now();
                     break;
                 case "AS":

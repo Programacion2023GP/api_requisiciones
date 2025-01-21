@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AutorizadoresController;
 use App\Http\Controllers\DepartamentosController;
+use App\Http\Controllers\DepartamentsController;
 use App\Http\Controllers\DetailsRequisicionesController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuUserController;
@@ -72,6 +73,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/index', [ProvedoresController::class, 'index']);
         Route::post('/create', [ProvedoresController::class, 'create']);
         Route::put('/update', [ProvedoresController::class, 'update']);
+    });
+    Route::prefix('/departaments')->group(function () {
+        Route::get('/index', [DepartamentsController::class, 'index']);
+     
+        Route::post('/create', [DepartamentsController::class, 'create']);
     });
 });
 Route::get('/hola', function() {
