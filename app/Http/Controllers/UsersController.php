@@ -197,7 +197,14 @@ class UsersController extends Controller
                         }
                     }
                 }
+                if ($route == "") {
 
+                    foreach ($menuPermisos as $mP) {
+                        if ((trim($mP->IdMenu) == "CatDepartamentos" || trim($mP->IdMenu) ==  "CatDepartamentos") && $mP->EstadoPermiso == 1) {
+                            $route = "CatDepartamentos";
+                        }
+                    }
+                }
                 return ApiResponse::success([
                     "permisos" => $permisos,
                     "menuPermiso" => $menuPermisos,
@@ -211,10 +218,10 @@ class UsersController extends Controller
                 ], 'Bienvenido al sistema');
             }
 
-            return ApiResponse::error('Credenciales incorrectas', 401);
+            return ApiResponse::error('Credenciales incorrectas', 500);
         } catch (Exception $e) {
 
-            return ApiResponse::error('El usuario no se pudo autenticar o no tienes permisos', 401);
+            return ApiResponse::error('El usuario no se pudo autenticar o no tienes permisos', 500);
         }
     }
 
@@ -232,5 +239,15 @@ class UsersController extends Controller
         });
 
         return response()->json(['message' => 'cerrando sesión']);
+    }
+    public function changePassword(Request $request){
+        $user = User::where('IDUsuario', Auth::user()->IDUsuario)->first();
+        if ($user) {
+            $user->Password =  $request->Password;
+            $user->save();
+            return ApiResponse::success($user, 'Contraseña actualizada con éxito');
+        } else {
+            return ApiResponse::error('El usuario no existe', 404);
+        }
     }
 }

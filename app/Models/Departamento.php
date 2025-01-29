@@ -10,4 +10,6 @@ class Departamento extends Model
     use HasFactory;
     protected $primaryKey = 'IDDepartamento';
     protected $table = 'cat_departamentos';
+    public $timestamps = false;
+
 }

@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('/auth')->group(function () {
     Route::post('/login', [UsersController::class, 'login']);
+    Route::post('/changePassword', [UsersController::class, 'changePassword'])->middleware('auth:sanctum');
+
     Route::post('/logout', [UsersController::class, 'logout'])->middleware('auth:sanctum');
 });
 Route::prefix('/menu')->group(function () {});
@@ -51,12 +53,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('/requisiciones')->group(function () {
         Route::post('/create', [RequisicionesController::class, 'create']);
         Route::post('/index', [RequisicionesController::class, 'index']);
+
+        //edita los status
         Route::put('/update', [RequisicionesController::class, 'update']);
         Route::put('/vobo', [RequisicionesController::class, 'vobo']);
         Route::post('/show', [RequisicionesController::class, 'show']);
         Route::post('/detailsRequisicion', [RequisicionesController::class, 'detailsRequisicion']);
 
-        
+        //obtener la info de la requisicion
+        Route::post('/showRequisicion', [RequisicionesController::class, 'showRequisicion']);
+
         Route::post('/products ', [RequisicionesController::class, 'products']);
         Route::post('/asignedAutorized ', [RequisicionesController::class, 'asignedAutorized']);
     });
@@ -76,6 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/departaments')->group(function () {
         Route::get('/index', [DepartamentsController::class, 'index']);
+        Route::put('/update', [DepartamentsController::class, 'update']);
      
         Route::post('/create', [DepartamentsController::class, 'create']);
     });

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiResponse;
 use App\Models\Departamento;
+use App\Models\DetailRequisition;
 use App\Models\Requisiciones;
 use App\Models\Tipos;
+use Error;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,15 +19,21 @@ class   RequisicionesController extends Controller
     public function create(Request $request)
     {
         DB::beginTransaction(); // Inicia la transacción
-
+        $message ="Requisicion creada con exito";
         try {
-            $requisicion = Requisiciones::find($request->Usuario);
+            $requisicion = Requisiciones::find($request->Id);
+            $detailsRequisitionController = new DetailsRequisitionController();
 
             if (!$requisicion) {
                 // Actualizar usuario   
                 $requisicion = new Requisiciones();
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
+            }
+            else{
+        $message ="Requisicion actualizada con exito";
+
+                $detailsRequisitionController->delete($requisicion->IDRequisicion, $requisicion->Ejercicio);
             }
             $centro_costo = Departamento::where('IDDepartamento', $request->IDDepartamento)->first();
 
@@ -53,16 +61,14 @@ class   RequisicionesController extends Controller
 
             foreach ($datos as $key => $valor) {
                 if (strpos($key, 'Descripcion') === 0) {
-                    Log::info("Clave de descripción encontrada: $key");
+                    // Log::info("Clave de descripción encontrada: $key");
 
                     $index = substr($key, 11); // Obtener índice numérico
                     $cantidadKey = 'Cantidad' . $index;
 
                     if ($request->has($cantidadKey)) {
                         $cantidad = $request->input($cantidadKey);
-                        Log::info("Requisicion aqui $requisicion");
 
-                        $detailsRequisitionController = new DetailsRequisitionController();
                         $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
                     } else {
                         Log::warning("Clave de cantidad no encontrada: $cantidadKey");
@@ -74,7 +80,7 @@ class   RequisicionesController extends Controller
 
             DB::commit(); // Confirma la transacción
 
-            return ApiResponse::success($requisicion, 'Requisición creada con exito');
+            return ApiResponse::success($requisicion, $message);
         } catch (Exception $e) {
             DB::rollBack(); // Revertir cambios si hay un error
 
@@ -112,11 +118,11 @@ class   RequisicionesController extends Controller
             ini_set('memory_limit', '2048M'); // O cualquier valor mayor
 
             // Verificar si se ha pasado una consulta SQL
+            $consulta  = $request->sql;
             if ($request->filled('sql')) {
                 if (Auth::user()->Rol == 'CAPTURA') {
-                    return;
+                    $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
                 }
-                $consulta  = $request->sql;
                 if (Auth::user()->Rol == 'REQUISITOR') {
                     $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
                 }
@@ -147,19 +153,16 @@ class   RequisicionesController extends Controller
                 // Ejecutar la consulta SQL
                 $sql = DB::raw($consulta);
                 $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql)->orderBy('Id', 'desc');
-            
-
-             
             } else {
                 // Si no se pasa una consulta SQL personalizada, se obtienen todas las requisiciones
                 $query = DB::table('requisiciones_view')->distinct();
             }
             $requisiciones = $query
-            ->get()
-            ->unique(function ($item) {
-                return $item->IDRequisicion . '-' . $item->Ejercicio;
-            })
-            ->values(); // Reindexa los datos
+                ->get()
+                ->unique(function ($item) {
+                    return $item->IDRequisicion . '-' . $item->Ejercicio;
+                })
+                ->values(); // Reindexa los datos
             // Devuelve la respuesta en formato JSON
             return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
         } catch (\Exception $e) {
@@ -199,17 +202,35 @@ class   RequisicionesController extends Controller
                 case "OC":
                     $requisicion->UsuarioOC = Auth::user()->Usuario;
                     $requisicion->FechaOrdenCompra = now();
+                    $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
+                    ->where('IDRequisicion', $requisicion->IDRequisicion)
+                    ->whereNull('Proveedor')
+                
+                    ->first();
+                if ($condition) {
+                    throw new Exception('No se puede avanzar porque no se han asignado provedor a todos los productos');
+                }
+                    
                     break;
-                case "CO":
-                    $requisicion->UsuarioCO = Auth::user()->Usuario;
-                    $requisicion->FechaCotizacion = now();
+                    case "CO":
+                        $requisicion->UsuarioCO = Auth::user()->Usuario;
+                        $requisicion->FechaCotizacion = now();
+                        $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
+                            ->where('IDRequisicion', $requisicion->IDRequisicion)
+                            ->whereNull('IDproveedor1')
+                            ->whereNull('IDproveedor2')
+                            ->whereNull('IDproveedor3')
+                            ->first();
+                        if ($condition) {
+                            throw new Exception('No se puede avanzar porque no se han cotizado todos los productos');
+                        }
                     break;
                 case "SU":
 
                     break;
-                    case "CA":
+                case "CA":
 
-                        break;
+                    break;
                 default:
                     return ApiResponse::error("Estado inválido", 400);
             }
@@ -221,7 +242,13 @@ class   RequisicionesController extends Controller
             return ApiResponse::success($requisicion, 'Requisición actualizada con éxito');
         } catch (Exception $e) {
             DB::rollBack(); // Revertir cambios si hay un error
-            Log::error($e->getMessage()); // Registrar el mensaje de error
+            if ($e->getMessage() == 'No se puede avanzar porque no se han cotizado todos los productos') {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
+            if ($e->getMessage() == 'No se puede avanzar porque no se han asignado provedor a todos los productos') {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
+
             return ApiResponse::error("La requisición no se pudo actualizar", 500);
         }
     }
@@ -249,20 +276,31 @@ class   RequisicionesController extends Controller
     public function show(Request $request)
     {
         try {
-             $requisicion = DB::table('requisiciones_view')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->first();
-             $details = DB::table('det_requisicion')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
-             return ApiResponse::success(["requisicion"=>$requisicion,"details"=>$details], 'Productos obtenidos con éxito');
-
+            $requisicion = DB::table('requisiciones_view')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->first();
+            $details = DB::table('det_requisicion')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
+            return ApiResponse::success(["requisicion" => $requisicion, "details" => $details], 'Productos obtenidos con éxito');
         } catch (Exception $e) {
             return ApiResponse::error("No se pudieron obtener los productos", 500);
-
+        }
+    }
+    public function showRequisicion(Request $request)
+    {
+        try {
+            $requisicion = Requisiciones::join('det_requisicion', function ($join) {
+                    $join->on('det_requisicion.Ejercicio', '=', 'requisiciones.Ejercicio')
+                        ->on('det_requisicion.IDRequisicion', '=', 'requisiciones.IDRequisicion');
+                })->where('requisiciones.Id', $request->Id)
+                ->get();
+            return ApiResponse::success($requisicion, 'Requisición obtenida con éxito');
+        } catch (\Exception $e) {
+            return ApiResponse::error("No se pudo obtener la requisición", 500);
         }
     }
     public function detailsRequisicion(Request $request)
     {
         try {
             $products = DB::table('products_details')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
-            
+
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
         } catch (\Exception $e) {
             return ApiResponse::error("No se pudieron obtener los productos", 500);

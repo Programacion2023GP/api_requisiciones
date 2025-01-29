@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiResponse;
 use App\Models\Details;
+use App\Models\Provedor;
 use App\Models\Requisiciones;
 use Exception;
 use Illuminate\Http\Request;
@@ -51,6 +52,11 @@ class DetailsRequisicionesController extends Controller
                     }
                 
                 $detalles->save();
+            }
+            if ($request->newStatus == "OC") {
+                Provedor::where('Proveedor', $request->Proveedor)
+                ->update(['Comprado' => 1]);
+                            
             }
             // $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->first();
             // if ($request->newStatus == "CO") {
