@@ -54,7 +54,7 @@ class DetailsRequisicionesController extends Controller
                 $detalles->save();
             }
             if ($request->newStatus == "OC") {
-                Provedor::where('Proveedor', $request->Proveedor)
+                Provedor::where('IDProveedor', $request->Proveedor)
                 ->update(['Comprado' => 1]);
                             
             }

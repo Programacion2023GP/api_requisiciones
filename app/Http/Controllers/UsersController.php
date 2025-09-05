@@ -10,6 +10,7 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\AutorizadoresController;
 use App\Models\Autorizadores;
+use App\Models\Departamento;
 use App\Models\Director;
 use ErrorException;
 use Illuminate\Support\Facades\Auth;
@@ -105,6 +106,9 @@ class UsersController extends Controller
             // Lógica de roles
             if ($request->Rol === 'AUTORIZADOR') {
                 (new AutorizadoresController())->create($request);
+            }
+            if ($request->Rol === 'DIRECTORCOMPRAS') {
+                (new AutorizadoresController())->create($request);
             } elseif ($request->Rol === 'REQUISITOR') {
                 (new RequisitorController())->create($request);
             } elseif ($request->Rol === 'DIRECTOR') {
@@ -146,7 +150,7 @@ class UsersController extends Controller
 
             $user = User::where('Usuario', $credentials['Usuario'])->first();
             $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
-
+            $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
             if ($user && $user->Password === $credentials['Password']) {
                 $token = $user->createToken('YourAppName')->plainTextToken;
                 $menuPermisos = DB::select("
@@ -212,7 +216,7 @@ class UsersController extends Controller
                     "group" => $user->IDDepartamento,
                     "role" => $user->Rol,
                     "redirect" => "/" . $route,
-
+                    "centro_costo" => $departamento->Centro_Costo,
                     "name" => $user->NombreCompleto,
 
                 ], 'Bienvenido al sistema');
@@ -240,7 +244,8 @@ class UsersController extends Controller
 
         return response()->json(['message' => 'cerrando sesión']);
     }
-    public function changePassword(Request $request){
+    public function changePassword(Request $request)
+    {
         $user = User::where('IDUsuario', Auth::user()->IDUsuario)->first();
         if ($user) {
             $user->Password =  $request->Password;

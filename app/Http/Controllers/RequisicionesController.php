@@ -19,7 +19,7 @@ class   RequisicionesController extends Controller
     public function create(Request $request)
     {
         DB::beginTransaction(); // Inicia la transacción
-        $message ="Requisicion creada con exito";
+        $message = "Requisicion creada con exito";
         try {
             $requisicion = Requisiciones::find($request->Id);
             $detailsRequisitionController = new DetailsRequisitionController();
@@ -29,9 +29,9 @@ class   RequisicionesController extends Controller
                 $requisicion = new Requisiciones();
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
-            }
-            else{
-        $message ="Requisicion actualizada con exito";
+                $requisicion->Status = "CP";
+            } else {
+                $message = "Requisicion actualizada con exito";
 
                 $detailsRequisitionController->delete($requisicion->IDRequisicion, $requisicion->Ejercicio);
             }
@@ -44,12 +44,15 @@ class   RequisicionesController extends Controller
 
             $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             $requisicion->UsuarioCa = Auth::user()->Usuario;
-            $requisicion->IDDepartamento = $request->IDDepartamento;
+            $requisicion->IDDepartamento = Auth::user()->Rol == "CAPTURA" ? Auth::user()->IDDepartamento :  $request->IDDepartamento;
             $requisicion->Solicitante = $request->Solicitante;
             $requisicion->Observaciones = $request->Observaciones;
             $requisicion->IDTipo = $request->IDTipo;
-            $requisicion->Status = "CP";
-            $requisicion->centro_costo = $centro_costo->Centro_Costo;
+
+            $requisicion->centro_costo = Auth::user()->Rol == "CAPTURA"
+                ? Departamento::select('Centro_Costo')->where('IDDepartamento', Auth::user()->IDDepartamento)->first()->Centro_Costo
+                : $centro_costo->Centro_Costo;
+
             $tipo = Tipos::where('IDTipo', $request->IDTipo)->first();
             // 
             $requisicion->AutEspecial = $tipo->RequiereAut;
@@ -121,7 +124,7 @@ class   RequisicionesController extends Controller
             $consulta  = $request->sql;
             if ($request->filled('sql')) {
                 if (Auth::user()->Rol == 'CAPTURA') {
-                    $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
+                    $consulta .= " AND UsuarioCA = '" . Auth::user()->Usuario . "'";
                 }
                 if (Auth::user()->Rol == 'REQUISITOR') {
                     $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
@@ -152,6 +155,8 @@ class   RequisicionesController extends Controller
 
                 // Ejecutar la consulta SQL
                 $sql = DB::raw($consulta);
+
+
                 $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql)->orderBy('Id', 'desc');
             } else {
                 // Si no se pasa una consulta SQL personalizada, se obtienen todas las requisiciones
@@ -203,29 +208,32 @@ class   RequisicionesController extends Controller
                     $requisicion->UsuarioOC = Auth::user()->Usuario;
                     $requisicion->FechaOrdenCompra = now();
                     $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
-                    ->where('IDRequisicion', $requisicion->IDRequisicion)
-                    ->whereNull('Proveedor')
-                
-                    ->first();
-                if ($condition) {
-                    throw new Exception('No se puede avanzar porque no se han asignado provedor a todos los productos');
-                }
-                    
+                        ->where('IDRequisicion', $requisicion->IDRequisicion)
+                        ->whereNull('Proveedor')
+
+                        ->first();
+                    if ($condition) {
+                        throw new Exception('No se puede avanzar porque no se han asignado provedor a todos los productos');
+                    }
+
                     break;
-                    case "CO":
-                        $requisicion->UsuarioCO = Auth::user()->Usuario;
-                        $requisicion->FechaCotizacion = now();
-                        $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
-                            ->where('IDRequisicion', $requisicion->IDRequisicion)
-                            ->whereNull('IDproveedor1')
-                            ->whereNull('IDproveedor2')
-                            ->whereNull('IDproveedor3')
-                            ->first();
-                        if ($condition) {
-                            throw new Exception('No se puede avanzar porque no se han cotizado todos los productos');
-                        }
+                case "CO":
+                    $requisicion->UsuarioCO = Auth::user()->Usuario;
+                    $requisicion->FechaCotizacion = now();
+                    $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
+                        ->where('IDRequisicion', $requisicion->IDRequisicion)
+                        ->whereNull('IDproveedor1')
+                        ->whereNull('IDproveedor2')
+                        ->whereNull('IDproveedor3')
+                        ->first();
+                    if ($condition) {
+                        throw new Exception('No se puede avanzar porque no se han cotizado todos los productos');
+                    }
                     break;
                 case "SU":
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
+
+
 
                     break;
                 case "CA":
@@ -249,7 +257,7 @@ class   RequisicionesController extends Controller
                 return ApiResponse::error($e->getMessage(), 500);
             }
 
-            return ApiResponse::error("La requisición no se pudo actualizar", 500);
+            return ApiResponse::error($e->getMessage(), 500);
         }
     }
     public function vobo(Request $request)
@@ -287,9 +295,9 @@ class   RequisicionesController extends Controller
     {
         try {
             $requisicion = Requisiciones::join('det_requisicion', function ($join) {
-                    $join->on('det_requisicion.Ejercicio', '=', 'requisiciones.Ejercicio')
-                        ->on('det_requisicion.IDRequisicion', '=', 'requisiciones.IDRequisicion');
-                })->where('requisiciones.Id', $request->Id)
+                $join->on('det_requisicion.Ejercicio', '=', 'requisiciones.Ejercicio')
+                    ->on('det_requisicion.IDRequisicion', '=', 'requisiciones.IDRequisicion');
+            })->where('requisiciones.Id', $request->Id)
                 ->get();
             return ApiResponse::success($requisicion, 'Requisición obtenida con éxito');
         } catch (\Exception $e) {
@@ -299,6 +307,7 @@ class   RequisicionesController extends Controller
     public function detailsRequisicion(Request $request)
     {
         try {
+            // return "#";
             $products = DB::table('products_details')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
 
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
