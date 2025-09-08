@@ -215,7 +215,7 @@ class UsersController extends Controller
                     "token" => $token,
                     "group" => $user->IDDepartamento,
                     "role" => $user->Rol,
-                    "redirect" => "/#/" . $route,
+                    "redirect" => "/" . $route,
                     "centro_costo" => $departamento->Centro_Costo,
                     "name" => $user->NombreCompleto,
 
