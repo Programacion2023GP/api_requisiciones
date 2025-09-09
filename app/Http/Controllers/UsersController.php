@@ -225,7 +225,7 @@ class UsersController extends Controller
             return ApiResponse::error('Credenciales incorrectas', 500);
         } catch (Exception $e) {
 
-            return ApiResponse::error($e->getMessage(), 500);
+            return ApiResponse::error("ocurrio un error", 500);
         }
     }
 
