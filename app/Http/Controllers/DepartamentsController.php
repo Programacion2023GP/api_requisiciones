@@ -15,7 +15,7 @@ class DepartamentsController extends Controller
     public function index()
     {
         try {
-            $departaments = DB::table('directores')->get();
+            $departaments = DB::table('det_directores')->get();
             return ApiResponse::success($departaments, 'Usuarios recuperados con éxito');
         } catch (Exception $e) {
             return ApiResponse::error('Error al recuperar los usuarios', 500);
