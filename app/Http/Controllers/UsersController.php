@@ -106,18 +106,44 @@ class UsersController extends Controller
             // Lógica de roles
             if ($request->Rol === 'AUTORIZADOR') {
                 (new AutorizadoresController())->create($request);
-            }
-            if ($request->Rol === 'DIRECTORCOMPRAS') {
+                 (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
+            } else if ($request->Rol === 'DIRECTORCOMPRAS') {
                 (new AutorizadoresController())->create($request);
+                (new MenuUserController())->create(new Request([
+                    "CatDepartamentos"   => 1,
+                    "CatProveedores"     => 1,
+                    "Listado"            => 1,
+                    "ReporteConsumibles" => 1,
+                    "RequisicionesAdd"   => 1,
+                    "SeguimientoRequis"  => 1,
+                    "Soporte"            => 1,
+                    "VoBo"               => 1,
+                    "Permisos"           => 1,
+                    "Usuarios"           => 1,
+                ]), $user->Usuario);
+            } else if ($request->Rol === 'CAPTURA') {
+                (new MenuUserController())->create(new Request(["Listado" => 1, "RequisicionesAdd"   => 1]), $user->Usuario);
             } elseif ($request->Rol === 'REQUISITOR') {
                 (new RequisitorController())->create($request);
-            } elseif ($request->Rol === 'DIRECTOR') {
-                $exists = Director::where('IdDepartamento', $request->IDDepartamento)->exists();
+                (new AutorizadoresController())->create($request);
+                                (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
 
-                if ($exists) {
-                    throw new Exception('Ya existe el director');
-                }
+            } elseif ($request->Rol === 'DIRECTOR') {
+                   (new MenuUserController())->create(new Request([
+                
+                    "Listado"            => 1,
+                    "RequisicionesAdd"   => 1,
+                    "SeguimientoRequis"  => 1,
+                    "Soporte"            => 1,
+                  
+                ]), $user->Usuario);
+                // $exists = Director::where('IdDepartamento', $request->IDDepartamento)->exists();
+
+                // if ($exists) {
+                //     throw new Exception('Ya existe el director');
+                // }
                 (new DirectorController())->create($request);
+                (new AutorizadoresController())->create($request);
             }
 
             DB::commit(); // Confirma la transacción
@@ -225,7 +251,7 @@ class UsersController extends Controller
             return ApiResponse::error('Credenciales incorrectas', 500);
         } catch (Exception $e) {
 
-            return ApiResponse::error("ocurrio un error", 500);
+            return ApiResponse::error($e->getMessage(), 500);
         }
     }
 
