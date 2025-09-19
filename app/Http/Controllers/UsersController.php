@@ -110,16 +110,16 @@ class UsersController extends Controller
             } else if ($request->Rol === 'DIRECTORCOMPRAS') {
                 (new AutorizadoresController())->create($request);
                 (new MenuUserController())->create(new Request([
-                    "CatDepartamentos"   => 1,
-                    "CatProveedores"     => 1,
+                    // "CatDepartamentos"   => 1,
+                    // "CatProveedores"     => 1,
                     "Listado"            => 1,
                     "ReporteConsumibles" => 1,
                     "RequisicionesAdd"   => 1,
                     "SeguimientoRequis"  => 1,
                     "Soporte"            => 1,
                     "VoBo"               => 1,
-                    "Permisos"           => 1,
-                    "Usuarios"           => 1,
+                    // "Permisos"           => 1,
+                    // "Usuarios"           => 1,
                 ]), $user->Usuario);
             } else if ($request->Rol === 'CAPTURA') {
                 (new MenuUserController())->create(new Request(["Listado" => 1, "RequisicionesAdd"   => 1]), $user->Usuario);
