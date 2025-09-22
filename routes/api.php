@@ -82,6 +82,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/departaments')->group(function () {
         Route::get('/index', [DepartamentsController::class, 'index']);
+        Route::get('/director/{id}', [DepartamentsController::class, 'director']);
+
         Route::put('/update', [DepartamentsController::class, 'update']);
      
         Route::post('/create', [DepartamentsController::class, 'create']);
