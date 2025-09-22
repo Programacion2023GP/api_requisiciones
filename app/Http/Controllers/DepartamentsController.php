@@ -21,10 +21,10 @@ class DepartamentsController extends Controller
             return ApiResponse::error('Error al recuperar los usuarios', 500);
         }
     }
-    public function director(int $id)
+      public function director(int $id)
     {
         try {
-            $departaments = DB::table('det_directores')->where('IDDepartamento', $id)->get();
+            $departaments = DB::table('det_directores')->where('IDDepartamento',$id)->get();
             return ApiResponse::success($departaments, 'Usuarios recuperados con éxito');
         } catch (Exception $e) {
             return ApiResponse::error('Error al recuperar los usuarios', 500);
@@ -54,23 +54,16 @@ class DepartamentsController extends Controller
 
             // Procesar la imagen (firma del director)
             if ($request->hasFile('Firma_Director') && $request->file('Firma_Director')->isValid()) {
+                // Obtener el archivo
                 $firma = $request->file('Firma_Director');
 
-                // Carpeta por departamento
-                $dir = 'public/firma_directores/' . $request->IDDepartamento;
-                Storage::makeDirectory($dir); // Asegura que la carpeta exista
+                // Crear un nombre único para el archivo
+                $filename = uniqid('firma_') . '.' . $firma->getClientOriginalExtension();
 
-                // Nombre único para cada archivo
-                $filename = time() . '_' . uniqid() . '.' . $firma->getClientOriginalExtension();
+                // Guardar la imagen en la carpeta correspondiente al ID del departamento
+                $path = $firma->storeAs('public/firma_directores/' . $request->IDDepartamento, $filename);
 
-                // Guardar la firma
-                $path = $firma->storeAs($dir, $filename);
-
-                if (!$path) {
-                    throw new \Exception('No se pudo guardar la firma');
-                }
-
-                // Ruta pública para almacenar en la DB
+                // Asignar el path de la firma al modelo
                 $director->Firma_Director = 'storage/firma_directores/' . $request->IDDepartamento . "/" . $filename;
             } else {
                 throw new \Exception('La firma no es válida o no fue cargada correctamente.');
