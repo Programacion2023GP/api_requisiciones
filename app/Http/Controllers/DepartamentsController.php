@@ -25,6 +25,7 @@ class DepartamentsController extends Controller
     {
         try {
             $departaments = DB::table('det_directores')->where('IDDepartamento',$id)->get();
+            
             return ApiResponse::success($departaments, 'Usuarios recuperados con éxito');
         } catch (Exception $e) {
             return ApiResponse::error('Error al recuperar los usuarios', 500);
