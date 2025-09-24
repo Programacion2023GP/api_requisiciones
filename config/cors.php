@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['https://requisiciones.gomezpalacio.gob.mx/'],
+    'allowed_origins' => ['https://requisiciones.gomezpalacio.gob.mx'],
 
     'allowed_origins_patterns' => [],
 
