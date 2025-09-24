@@ -39,7 +39,9 @@ class   RequisicionesController extends Controller
 
             $requisicion->Ejercicio = date('Y');
             //centro de costo
-            $requisicion->FechaCaptura = date('Y-m-d H:i:s');
+          $requisicion->FechaCaptura = $request->FechaCaptura;
+
+            // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
             $requisicion->FUM = date('Y-m-d H:i:s');
 
             $requisicion->UsuarioCaptura = Auth::user()->Usuario;
