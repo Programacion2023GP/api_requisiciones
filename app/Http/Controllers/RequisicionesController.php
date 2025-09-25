@@ -243,6 +243,7 @@ class   RequisicionesController extends Controller
 
                     break;
                 case "CA":
+                    $requisicion->Motivo_Cancelacion =  $request->Motivo_Cancelacion;
 
                     break;
                 default:
