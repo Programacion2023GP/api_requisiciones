@@ -58,7 +58,6 @@ class DepartamentsController extends Controller
          $nameDirector = DB::table('cat_usuarios')
     ->where("IDDepartamento", $request->IDDepartamento)
     ->first();
-
             $director->Nombre_Director = $nameDirector->NombreCompleto;
             // Procesar la imagen (firma del director)
             if ($request->hasFile('Firma_Director') && $request->file('Firma_Director')->isValid()) {
