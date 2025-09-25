@@ -44,7 +44,7 @@ class DetailsRequisicionesController extends Controller
                     'Proveedor',
                 ];
             }
-            // Iterar sobre cada registro y actualizar
+            // Iterar sobre cada registro y actualizar  
      
                 foreach ($camposPermitidos as $campo) {
                     if ($request->has($campo)) {
