@@ -29,12 +29,15 @@ class UsersController extends Controller
                         'autorizadores.Permiso_Asignar',
                         'autorizadores.Permiso_Cotizar',
                         'autorizadores.Permiso_Orden_Compra',
-                        'autorizadores.Permiso_Surtir'
+                        'autorizadores.Permiso_Surtir',
+                        'cat_departamentos.Nombre_Departamento'
 
 
 
                     )
                     ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
+                    ->leftJoin('cat_departamentos', 'cat_departamentos.IDDepartamento', '=', 'cat_usuarios.IDDepartamento')
+
                     ->whereRaw($request->sql)
                     ->orderBy('IDUsuario', 'desc')
                     ->get();
@@ -46,12 +49,16 @@ class UsersController extends Controller
                         'autorizadores.Permiso_Asignar',
                         'autorizadores.Permiso_Cotizar',
                         'autorizadores.Permiso_Orden_Compra',
-                        'autorizadores.Permiso_Surtir'
+                        'autorizadores.Permiso_Surtir',
+                        'cat_departamentos.Nombre_Departamento'
+
 
 
 
                     )
                     ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
+                    ->leftJoin('cat_departamentos', 'cat_departamentos.IDDepartamento', '=', 'cat_usuarios.IDDepartamento')
+
                     ->orderBy('IDUsuario', 'desc')
                     ->get();
             }
@@ -89,7 +96,7 @@ class UsersController extends Controller
             $user = User::find($request->IDUsuario);
             if ($user) {
                 // Actualizar usuario
-                
+
                 $user->update($request->all());
                 $message = 'Usuario actualizado con éxito';
             } else {
@@ -106,7 +113,7 @@ class UsersController extends Controller
             // Lógica de roles
             if ($request->Rol === 'AUTORIZADOR') {
                 (new AutorizadoresController())->create($request);
-                 (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
+                (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
             } else if ($request->Rol === 'DIRECTORCOMPRAS') {
                 (new AutorizadoresController())->create($request);
                 (new MenuUserController())->create(new Request([
@@ -126,16 +133,15 @@ class UsersController extends Controller
             } elseif ($request->Rol === 'REQUISITOR') {
                 (new RequisitorController())->create($request);
                 (new AutorizadoresController())->create($request);
-                                (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
-
+                (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
             } elseif ($request->Rol === 'DIRECTOR') {
-                   (new MenuUserController())->create(new Request([
-                
+                (new MenuUserController())->create(new Request([
+
                     "Listado"            => 1,
                     "RequisicionesAdd"   => 1,
                     "SeguimientoRequis"  => 1,
                     "Soporte"            => 1,
-                  
+
                 ]), $user->Usuario);
                 // $exists = Director::where('IdDepartamento', $request->IDDepartamento)->exists();
 
