@@ -21,11 +21,11 @@ class DepartamentsController extends Controller
             return ApiResponse::error('Error al recuperar los usuarios', 500);
         }
     }
-      public function director(int $id)
+    public function director(int $id)
     {
         try {
-            $departaments = DB::table('det_directores')->where('IDDepartamento',$id)->get();
-            
+            $departaments = DB::table('det_directores')->where('IDDepartamento', $id)->get();
+
             return ApiResponse::success($departaments, 'Usuarios recuperados con éxito');
         } catch (Exception $e) {
             return ApiResponse::error('Error al recuperar los usuarios', 500);
@@ -48,11 +48,18 @@ class DepartamentsController extends Controller
         try {
             // Crear una nueva instancia de Director
             $director = new Director();
-
+            
             // Asignar los valores del request al director
-            $director->IdDepartamento = $request->IDDepartamento;
-            $director->Nombre_Director = $request->Nombre_Director;
+            $director->IDDepartamento = $request->IDDepartamento;
+            $directoresId = DB::table('relusuariodepartamento')->insertGetId([
+                "IDUsuario" => $request->IDUsuario,
+                "IDDepartamento" => $request->IDDepartamento,
+            ]);
+         $nameDirector = DB::table('cat_usuarios')
+    ->where("IDDepartamento", $request->IDDepartamento)
+    ->first();
 
+            $director->Nombre_Director = $nameDirector->NombreCompleto;
             // Procesar la imagen (firma del director)
             if ($request->hasFile('Firma_Director') && $request->file('Firma_Director')->isValid()) {
                 // Obtener el archivo
