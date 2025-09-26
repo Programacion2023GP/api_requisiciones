@@ -58,7 +58,11 @@ class DetailsRequisicionesController extends Controller
                 ->update(['Comprado' => 1]);
                             
             }
-            // $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->first();
+            if ($request->newStatus == "CO") {
+                $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->first();
+                $requisicion->ObservacionesCot = $request->ObservacionesCot;
+                $requisicion->update();
+            }
             // if ($request->newStatus == "CO") {
             //     $requisicion->ObservacionesCot = $request->ObservacionesCot;
             // }
