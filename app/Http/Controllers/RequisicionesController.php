@@ -39,11 +39,11 @@ class   RequisicionesController extends Controller
 
             $requisicion->Ejercicio = date('Y');
             //centro de costo
-          $requisicion->FechaCaptura = $request->FechaCaptura;
-          $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
-          $requisicion->FechaAsignacion = $request->FechaAsignacion;
-          $requisicion->FechaCotizacion = $request->FechaCotizacion;
-          $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
+            $requisicion->FechaCaptura = $request->FechaCaptura;
+            $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
+            $requisicion->FechaAsignacion = $request->FechaAsignacion;
+            $requisicion->FechaCotizacion = $request->FechaCotizacion;
+            $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
 
             // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
             $requisicion->FUM = date('Y-m-d H:i:s');
@@ -130,7 +130,36 @@ class   RequisicionesController extends Controller
             $consulta  = $request->sql;
             if ($request->filled('sql')) {
                 if (Auth::user()->Rol == 'CAPTURA') {
-                    $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
+
+                    // Definir condiciones basadas en el departamento
+                    $departamentoID = Auth::user()->IDDepartamento;
+                    $consultaPrev = $consulta;
+
+                    switch ($departamentoID) {
+                        case 84: // Taller Municipal
+                            $consulta = $consultaPrev . ' AND IDTipo = 5 OR ' . $consulta;
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
+                            $consultaPrev = $consulta;
+                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+                            break;
+                        case 83: // Servicios Generales
+                            $consulta = $consultaPrev . ' AND IDTipo = 7 OR ' . $consulta;
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
+                            $consultaPrev = $consulta;
+                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+                            break;
+                        case 27: // Informática
+                            $consulta = $consultaPrev . ' AND IDTipo = 6 OR ' . $consulta;
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
+                            $consultaPrev = $consulta;
+                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 if (Auth::user()->Rol == 'REQUISITOR') {
                     $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
