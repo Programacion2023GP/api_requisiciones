@@ -45,18 +45,17 @@ class DetailsRequisicionesController extends Controller
                 ];
             }
             // Iterar sobre cada registro y actualizar  
-     
-                foreach ($camposPermitidos as $campo) {
-                    if ($request->has($campo)) {
-                        $detalles->{$campo} = $request->{$campo};
-                    }
-                
+
+            foreach ($camposPermitidos as $campo) {
+                if ($request->has($campo)) {
+                    $detalles->{$campo} = $request->{$campo};
+                }
+
                 $detalles->save();
             }
             if ($request->newStatus == "OC") {
                 Provedor::where('IDProveedor', $request->Proveedor)
-                ->update(['Comprado' => 1]);
-                            
+                    ->update(['Comprado' => 1]);
             }
             if ($request->newStatus == "CO") {
                 $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)->where('Ejercicio', $request->Ejercicio)->first();
@@ -68,14 +67,25 @@ class DetailsRequisicionesController extends Controller
             // }
             // $requisicion->Status = $request->newStatus;
             // $requisicion->save();
-            return ApiResponse::success($detalles, $request->newStatus == "CO"? 'Se han insertado la cotización correctamente ':'la orden de compra se genero correctamente');
+            return ApiResponse::success($detalles, $request->newStatus == "CO" ? 'Se han insertado la cotización correctamente ' : 'la orden de compra se genero correctamente');
         } catch (Exception $e) {
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
-    public function search(Request $request){
+    public function search(Request $request)
+    {
         try {
-           $details = DB::table('det_requisicion')->where('IDDetalle',$request->IDDetalle)->first();
+            $details = DB::table('det_requisicion as d')
+                ->leftJoin('requisiciones as r', function ($join) {
+                    $join->on('r.Ejercicio', '=', 'd.Ejercicio')
+                        ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
+                })
+                ->where('d.IDDetalle', $request->IDDetalle)
+                ->select(
+                    'd.*',
+                    'r.ObservacionesCot'
+                )
+                ->first();
             return ApiResponse::success($details, 'Detalles de requisiciones encontrados con éxito');
         } catch (Exception $e) {
             return ApiResponse::error($e->getMessage(), 500);
