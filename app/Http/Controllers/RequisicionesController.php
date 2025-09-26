@@ -138,7 +138,10 @@ class   RequisicionesController extends Controller
                     switch ($departamentoID) {
                         case 84: // Taller Municipal
                             $consulta = $consultaPrev . ' AND IDTipo = 5 OR ' . $consulta;
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu',"VoBo")->first();
+                            if($usuarioVobo){  
+
+                            }
                             $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
                             $consultaPrev = $consulta;
                             $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
