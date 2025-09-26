@@ -130,7 +130,7 @@ class   RequisicionesController extends Controller
             $consulta  = $request->sql;
             if ($request->filled('sql')) {
                 if (Auth::user()->Rol == 'CAPTURA') {
-                    $consulta .= " AND UsuarioCA = '" . Auth::user()->Usuario . "'";
+                    $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
                 }
                 if (Auth::user()->Rol == 'REQUISITOR') {
                     $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
