@@ -58,7 +58,7 @@ class DepartamentsController extends Controller
         ]);
         
         $nameDirector = DB::table('cat_usuarios')
-            ->where("IDDepartamento", $request->IDDepartamento)->where("Rol","DIRECTOR")
+            ->where("IDDepartamento", $request->IDDepartamento)->whereIn("Rol",["DIRECTOR","DIRECTORCOMPRAS"])
             ->first();
         $director->Nombre_Director = $nameDirector->NombreCompleto;
         $dirPath = "presidencia/firmas_directores";
