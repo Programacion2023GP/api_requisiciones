@@ -149,7 +149,7 @@ class UsersController extends Controller
                 //     throw new Exception('Ya existe el director');
                 // }
                 (new DirectorController())->create($request);
-                (new AutorizadoresController())->create($request);
+                (new AutorizadoresController())->create($request);   
             }
 
             DB::commit(); // Confirma la transacción
