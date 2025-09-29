@@ -33,7 +33,7 @@ class   RequisicionesController extends Controller
             } else {
                 $message = "Requisicion actualizada con exito";
 
-                $detailsRequisitionController->delete($requisicion->IDRequisicion, $requisicion->Ejercicio);
+                   $detailsRequisitionController->delete($requisicion->IDRequisicion, $requisicion->Ejercicio);
             }
             $centro_costo = Departamento::where('IDDepartamento', $request->IDDepartamento)->first();
 
