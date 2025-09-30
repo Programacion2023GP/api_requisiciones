@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApiResponse;
 use App\Models\Departamento;
 use App\Models\DetailRequisition;
+use App\Models\RelUsuarioDepartamento;
 use App\Models\Requisiciones;
 use App\Models\Tipos;
 use Error;
@@ -129,7 +130,7 @@ class   RequisicionesController extends Controller
         }
     }
 
-   public function index(Request $request)
+    public function index(Request $request)
     {
         try {
             ini_set('memory_limit', '2048M'); // O cualquier valor mayor
@@ -138,37 +139,40 @@ class   RequisicionesController extends Controller
             $consulta  = $request->sql;
             if ($request->filled('sql')) {
                 if (Auth::user()->Rol == 'CAPTURA') {
+                    $departamentoID = Auth::user()->IDDepartamento;
+                    $departamentosDire = RelUsuarioDepartamento::where("IDUsuario", Auth::user()->IDUsuario)
+                        ->pluck("IDDepartamento")
+                        ->toArray(); // convertir a array simple
+
+                    $ids = implode(',', $departamentosDire);
+                    $consulta = $consulta . ' AND IDDepartamento IN (' . $ids . ')';
 
                     // Definir condiciones basadas en el departamento
-                    $departamentoID = Auth::user()->IDDepartamento;
                     $consultaPrev = $consulta;
 
                     switch ($departamentoID) {
                         case 84: // Taller Municipal
-                            $consulta = $consultaPrev . ' AND IDTipo = 5 OR ' . $consulta;
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
                             if ($usuarioVobo) {
+                                $consulta = $consultaPrev . ' OR IDTipo = 5 ';
                             }
-                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
-                            $consultaPrev = $consulta;
-                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+
                             break;
                         case 83: // Servicios Generales
-                            $consulta = $consultaPrev . ' AND IDTipo = 7 OR ' . $consulta;
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
-                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
-                            $consultaPrev = $consulta;
-                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+                            if ($usuarioVobo) {
+                                $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                            }
                             break;
                         case 27: // Informática
-                            $consulta = $consultaPrev . ' AND IDTipo = 6 OR ' . $consulta;
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
-                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
                             $consultaPrev = $consulta;
-                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+                            if ($usuarioVobo) {
+                                $consulta = $consultaPrev . ' OR IDTipo = 6 ';
+                            }
+
                             break;
                         default:
-                    $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
 
                             break;
                     }
@@ -182,20 +186,40 @@ class   RequisicionesController extends Controller
 
                     // Definir condiciones basadas en el departamento
                     $departamentoID = Auth::user()->IDDepartamento;
-                    $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+                    $departamentosDire = RelUsuarioDepartamento::where("IDUsuario", Auth::user()->IDUsuario)
+                        ->pluck("IDDepartamento")
+                        ->toArray(); // convertir a array simple
+
+                    $ids = implode(',', $departamentosDire); // "1,2,3"
+
+                    $consulta = $consulta . ' AND IDDepartamento IN (' . $ids . ')';
+
 
                     // Añadir condiciones específicas según el departamento
-                    switch ($departamentoID) {
+                   switch ($departamentoID) {
                         case 84: // Taller Municipal
-                            $consulta = $consultaPrev . ' AND IDTipo = 5 OR ' . $consulta;
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
+                            if ($usuarioVobo) {
+                                $consulta = $consultaPrev . ' OR IDTipo = 5 ';
+                            }
+
                             break;
                         case 83: // Servicios Generales
-                            $consulta = $consultaPrev . ' AND IDTipo = 7 OR ' . $consulta;
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            if ($usuarioVobo) {
+                                $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                            }
                             break;
                         case 27: // Informática
-                            $consulta = $consultaPrev . ' AND IDTipo = 6 OR ' . $consulta;
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $consultaPrev = $consulta;
+                            if ($usuarioVobo) {
+                                $consulta = $consultaPrev . ' OR IDTipo = 6 ';
+                            }
+
                             break;
                         default:
+
                             break;
                     }
                 }
