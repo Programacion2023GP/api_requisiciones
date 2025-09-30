@@ -44,11 +44,11 @@ class   RequisicionesController extends Controller
             $requisicion->FechaAsignacion = $request->FechaAsignacion;
             $requisicion->FechaCotizacion = $request->FechaCotizacion;
             $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
+            $requisicion->UsuarioCaptura = Auth::user()->Usuario;
 
             // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
             $requisicion->FUM = date('Y-m-d H:i:s');
 
-            $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             $requisicion->UsuarioCa = Auth::user()->Usuario;
             $requisicion->IDDepartamento = Auth::user()->Rol == "CAPTURA" ? Auth::user()->IDDepartamento :  $request->IDDepartamento;
             $requisicion->Solicitante = $request->Solicitante;
@@ -121,97 +121,7 @@ class   RequisicionesController extends Controller
         }
     }
 
-    public function index(Request $request)
-    {
-        try {
-            ini_set('memory_limit', '2048M'); // O cualquier valor mayor
-
-            // Verificar si se ha pasado una consulta SQL
-            $consulta  = $request->sql;
-            if ($request->filled('sql')) {
-                if (Auth::user()->Rol == 'CAPTURA') {
-
-                    // Definir condiciones basadas en el departamento
-                    $departamentoID = Auth::user()->IDDepartamento;
-                    $consultaPrev = $consulta;
-
-                    switch ($departamentoID) {
-                        case 84: // Taller Municipal
-                            $consulta = $consultaPrev . ' AND IDTipo = 5 OR ' . $consulta;
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if ($usuarioVobo) {
-                            }
-                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
-                            $consultaPrev = $consulta;
-                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
-                            break;
-                        case 83: // Servicios Generales
-                            $consulta = $consultaPrev . ' AND IDTipo = 7 OR ' . $consulta;
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
-                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
-                            $consultaPrev = $consulta;
-                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
-                            break;
-                        case 27: // Informática
-                            $consulta = $consultaPrev . ' AND IDTipo = 6 OR ' . $consulta;
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
-                            $consulta .= " AND IDDepartamento = '" . Auth::user()->IDDepartamento . "'";
-                            $consultaPrev = $consulta;
-                            $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                if (Auth::user()->Rol == 'REQUISITOR') {
-                    $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
-                }
-                // Si el rol es 'DIRECTOR', agregamos condiciones adicionales
-                if (Auth::user()->Rol == 'DIRECTOR') {
-                    $consultaPrev = $consulta;
-
-                    // Definir condiciones basadas en el departamento
-                    $departamentoID = Auth::user()->IDDepartamento;
-                    $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
-
-                    // Añadir condiciones específicas según el departamento
-                    switch ($departamentoID) {
-                        case 84: // Taller Municipal
-                            $consulta = $consultaPrev . ' AND IDTipo = 5 OR ' . $consulta;
-                            break;
-                        case 83: // Servicios Generales
-                            $consulta = $consultaPrev . ' AND IDTipo = 7 OR ' . $consulta;
-                            break;
-                        case 27: // Informática
-                            $consulta = $consultaPrev . ' AND IDTipo = 6 OR ' . $consulta;
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                // Ejecutar la consulta SQL
-                $sql = DB::raw($consulta);
-
-
-                $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql)->orderBy('Id', 'desc');
-            } else {
-                // Si no se pasa una consulta SQL personalizada, se obtienen todas las requisiciones
-                $query = DB::table('requisiciones_view')->distinct();
-            }
-            $requisiciones = $query
-                ->get()
-                ->unique(function ($item) {
-                    return $item->IDRequisicion . '-' . $item->Ejercicio;
-                })
-                ->values(); // Reindexa los datos
-            // Devuelve la respuesta en formato JSON
-            return ApiResponse::success($requisiciones, 'Lista de requisiciones obtenida con éxito');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-            return ApiResponse::error($e->getMessage(), 500);
-        }
-    }
+     
    public function update(Request $request)
     {
         try {
