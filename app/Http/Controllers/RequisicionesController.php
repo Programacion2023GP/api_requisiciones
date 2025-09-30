@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiResponse;
 use App\Models\Departamento;
-use App\Models\DetailRequisition;
 use App\Models\RelUsuarioDepartamento;
 use App\Models\Requisiciones;
 use App\Models\Tipos;
@@ -196,7 +195,7 @@ class   RequisicionesController extends Controller
 
 
                     // Añadir condiciones específicas según el departamento
-                   switch ($departamentoID) {
+                    switch ($departamentoID) {
                         case 84: // Taller Municipal
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
                             if ($usuarioVobo) {
