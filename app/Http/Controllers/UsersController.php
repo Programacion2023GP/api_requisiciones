@@ -12,9 +12,12 @@ use App\Http\Controllers\AutorizadoresController;
 use App\Models\Autorizadores;
 use App\Models\Departamento;
 use App\Models\Director;
+use App\Models\RelUsuarioDepartamento;
 use ErrorException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+
+use function Laravel\Prompts\select;
 
 class UsersController extends Controller
 {
@@ -183,6 +186,7 @@ class UsersController extends Controller
             $user = User::where('Usuario', $credentials['Usuario'])->first();
             $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
             $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
+            $departamentosUser = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)->pluck('IDDepartamento')->toArray();
             if ($user && $user->Password === $credentials['Password']) {
                 $token = $user->createToken('YourAppName')->plainTextToken;
                 $menuPermisos = DB::select("
@@ -245,7 +249,7 @@ class UsersController extends Controller
                     "permisos" => $permisos,
                     "menuPermiso" => $menuPermisos,
                     "token" => $token,
-                    "group" => $user->IDDepartamento,
+                    "group" => $departamento,
                     "role" => $user->Rol,
                     "redirect" => "/#/" . $route,
                     "centro_costo" => $departamento->Centro_Costo,
