@@ -43,7 +43,7 @@ class DepartamentsController extends Controller
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
-   public function create(Request $request)
+    public function create(Request $request)
     {
         try {
             // Crear una nueva instancia de Director
@@ -51,33 +51,37 @@ class DepartamentsController extends Controller
 
             // Asignar los valores del request al director
             $director->IDDepartamento = $request->IDDepartamento;
+
             $directoresId = DB::table('relusuariodepartamento')->insertGetId([
                 "IDUsuario" => $request->IDUsuario,
                 "IDDepartamento" => $request->IDDepartamento,
             ]);
+
             $nameDirector = DB::table('cat_usuarios')
-                ->where("IDDepartamento", $request->IDDepartamento)
+                ->where("IDDepartamento", $request->IDDepartamento)->where("Rol", "DIRECTOR")
+                ->where("IDDepartamento", $request->IDDepartamento)->whereIn("Rol", ["DIRECTOR", "DIRECTORCOMPRAS"])
                 ->first();
             $director->Nombre_Director = $nameDirector->NombreCompleto;
-            // Procesar la imagen (firma del director)
+            $dirPath = "presidencia/firmas_directores";
+            // Procesar la imagen usando la función ImgUpload adaptada
             if ($request->hasFile('Firma_Director') && $request->file('Firma_Director')->isValid()) {
-                // Obtener el archivo
                 $firma = $request->file('Firma_Director');
 
-                // Crear un nombre único para el archivo
-                $filename = uniqid('firma_') . '.' . $firma->getClientOriginalExtension();
+                // Usar la función ImgUpload con los parámetros que espera el microservicio
+                $imagePath = $this->ImgUpload(
+                    $firma,
+                    $request->IDDepartamento, // destination
+                    $dirPath, // dir
+                    'firma_director_' . $request->IDDepartamento    // imgName
+                );
 
-                // Guardar la imagen en la carpeta correspondiente al ID del departamento
-                $path = $firma->storeAs('public/firma_directores/' . $request->IDDepartamento, $filename);
-
-                // Asignar el path de la firma al modelo
-                $director->Firma_Director = 'storage/firma_directores/' . $request->IDDepartamento . "/" . $filename;
+                $director->Firma_Director = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->IDDepartamento . "/" . $imagePath;
             } else {
                 throw new \Exception('La firma no es válida o no fue cargada correctamente.');
             }
 
             // Asignar los demás valores
-            $director->FechaInicio = now()->format('Y-m-d'); // Cambiar el formato de la fecha
+            $director->FechaInicio = now()->format('Y-m-d');
             $director->FechaAlta = now();
             $director->Usuario = Auth::user()->Usuario;
             $director->Fum = now()->format('Y-m-d');
@@ -86,15 +90,80 @@ class DepartamentsController extends Controller
             // Guardar el director en la base de datos
             $director->save();
 
-            // Responder con éxito
             return ApiResponse::success($director, 'Director registrado exitosamente');
         } catch (\Exception $e) {
-            // Manejo de errores
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
+    /**
+     * Función para guardar una imagen en el microservicio, elimina y guarda la nueva al editar la imagen
+     * para no guardar muchas imágenes y genera el path que se guardará en la BD
+     * 
+     * @param $image File es el archivo de la imagen
+     * @param $destination String ruta donde se guardará en el microservicio
+     * @param $dir String ruta que mandará a la BD
+     * @param $imgName String Nombre de como se guardará el archivo
+     * @return String URL completa de la imagen en el microservicio
+     */
+    public function ImgUpload($image, $destination, $dir, $imgName)
+    {
+        // Verificar que la imagen sea válida
+        if (!$image || !$image->isValid()) {
+            throw new \Exception('La imagen no es válida');
+        }
 
-     public function relUserDepartment(Request $request)
+        // Generar nombre único para el archivo
+        $extension = $image->getClientOriginalExtension();
+        $filename = $imgName . '_' . time() . '.' . $extension;
+
+        // Subir al microservicio con los parámetros específicos
+        $imageUrl = $this->uploadToMicroservice($image, $destination, $dir, $filename);
+
+        // Devolver la URL completa para la BD
+        return $filename;
+    }
+
+    /**
+     * Función auxiliar para subir al microservicio con los parámetros específicos
+     */
+    private function uploadToMicroservice($file, $destination, $dir, $filename)
+    {
+        try {
+            $client = new \GuzzleHttp\Client();
+
+            $response = $client->request('POST', 'https://api.gpcenter.gomezpalacio.gob.mx/api/smImgUpload', [
+                'multipart' => [
+                    [
+                        'name'     => 'Firma_Director',
+                        'contents' => fopen($file->getPathname(), 'r'),
+                        'filename' => $filename,
+                    ],
+                    [
+                        'name' => 'dirDestination',
+                        'contents' => $destination,
+                    ],
+                    [
+                        'name' => 'dirPath',
+                        'contents' => $dir,
+                    ],
+                    [
+                        'name' => 'imgName',
+                        'contents' => $filename,
+                    ],
+                    [
+                        'name' => 'requestFileName',
+                        'contents' => 'Firma_Director',
+                    ],
+                ]
+            ]);
+        } catch (\Exception $e) {
+            throw new \Exception($e->getMessage());
+        }
+    }
+
+
+
+    public function relUserDepartment(Request $request)
     {
         try {
             // Crear una nueva instancia de Director
