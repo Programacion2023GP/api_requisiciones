@@ -20,6 +20,7 @@ class   RequisicionesController extends Controller
     {
         DB::beginTransaction(); // Inicia la transacción
         $message = "Requisicion creada con exito";
+        $update = false;
         try {
             $requisicion = Requisiciones::find($request->Id);
             $detailsRequisitionController = new DetailsRequisitionController();
@@ -30,25 +31,25 @@ class   RequisicionesController extends Controller
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
                 $requisicion->Status = "CP";
+                $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             } else {
                 $message = "Requisicion actualizada con exito";
-
-                $detailsRequisitionController->delete($requisicion->IDRequisicion, $requisicion->Ejercicio);
+                $update = true;
+                // $detailsRequisitionController->delete($requisicion->IDRequisicion, $requisicion->Ejercicio);
             }
             $centro_costo = Departamento::where('IDDepartamento', $request->IDDepartamento)->first();
 
             $requisicion->Ejercicio = date('Y');
             //centro de costo
-          $requisicion->FechaCaptura = $request->FechaCaptura;
-          $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
-          $requisicion->FechaAsignacion = $request->FechaAsignacion;
-          $requisicion->FechaCotizacion = $request->FechaCotizacion;
-          $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
+            $requisicion->FechaCaptura = $request->FechaCaptura;
+            $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
+            $requisicion->FechaAsignacion = $request->FechaAsignacion;
+            $requisicion->FechaCotizacion = $request->FechaCotizacion;
+            $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
 
             // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
             $requisicion->FUM = date('Y-m-d H:i:s');
 
-            $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             $requisicion->UsuarioCa = Auth::user()->Usuario;
             $requisicion->IDDepartamento = Auth::user()->Rol == "CAPTURA" ? Auth::user()->IDDepartamento :  $request->IDDepartamento;
             $requisicion->Solicitante = $request->Solicitante;
@@ -74,11 +75,18 @@ class   RequisicionesController extends Controller
 
                     $index = substr($key, 11); // Obtener índice numérico
                     $cantidadKey = 'Cantidad' . $index;
+                    $iDDetalleKey = 'IDDetalle' . $index;
 
                     if ($request->has($cantidadKey)) {
                         $cantidad = $request->input($cantidadKey);
+                        if ($update) {
+                            if ($request->has($iDDetalleKey) > 0) {
 
-                        $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
+                                $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
+                            }
+                        } else {
+                            $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
+                        }
                     } else {
                         Log::warning("Clave de cantidad no encontrada: $cantidadKey");
                     }
@@ -213,28 +221,28 @@ class   RequisicionesController extends Controller
                 case "OC":
                     $requisicion->UsuarioOC = Auth::user()->Usuario;
                     $requisicion->FechaOrdenCompra = now();
-                    $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
-                        ->where('IDRequisicion', $requisicion->IDRequisicion)
-                        ->whereNull('Proveedor')
+                    // $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
+                    //     ->where('IDRequisicion', $requisicion->IDRequisicion)
+                    //     ->whereNull('Proveedor')
 
-                        ->first();
-                    if ($condition) {
-                        throw new Exception('No se puede avanzar porque no se han asignado provedor a todos los productos');
-                    }
+                    //     ->first();
+                    // if ($condition) {
+                    //     throw new Exception('No se puede avanzar porque no se han asignado provedor a todos los productos');
+                    // }
 
                     break;
                 case "CO":
                     $requisicion->UsuarioCO = Auth::user()->Usuario;
                     $requisicion->FechaCotizacion = now();
-                    $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
-                        ->where('IDRequisicion', $requisicion->IDRequisicion)
-                        ->whereNull('IDproveedor1')
-                        ->whereNull('IDproveedor2')
-                        ->whereNull('IDproveedor3')
-                        ->first();
-                    if ($condition) {
-                        throw new Exception('No se puede avanzar porque no se han cotizado todos los productos');
-                    }
+                    // $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
+                    //     ->where('IDRequisicion', $requisicion->IDRequisicion)
+                    //     ->whereNull('IDproveedor1')
+                    //     ->whereNull('IDproveedor2')
+                    //     ->whereNull('IDproveedor3')
+                    //     ->first();
+                    // if ($condition) {
+                    //     throw new Exception('No se puede avanzar porque no se han cotizado todos los productos');
+                    // }
                     break;
                 case "SU":
                     $requisicion->Orden_Compra =  $request->ClavePresupuestal;
