@@ -70,7 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/requisicionesdetails')->group(function () {
         Route::put('/update', [DetailsRequisicionesController::class, 'update']);
-        Route::put('/ordencompra', [DetailsRequisicionesController::class, 'ordenCompra']);
+        Route::post('/ordencompra', [DetailsRequisicionesController::class, 'ordenCompra']);
 
         Route::post('/search', [DetailsRequisicionesController::class, 'search']);
 
