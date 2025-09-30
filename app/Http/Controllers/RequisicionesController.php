@@ -168,6 +168,8 @@ class   RequisicionesController extends Controller
                             $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
                             break;
                         default:
+                    $consulta = $consulta . ' AND IDDepartamento = ' . $departamentoID;
+
                             break;
                     }
                 }
