@@ -249,7 +249,7 @@ class UsersController extends Controller
                     "permisos" => $permisos,
                     "menuPermiso" => $menuPermisos,
                     "token" => $token,
-                    "group" => $departamento->IDDepartamento,
+                    "group" => $departamentosUser,
                     "role" => $user->Rol,
                     "redirect" => "/#/" . $route,
                     "centro_costo" => $departamento->Centro_Costo,
