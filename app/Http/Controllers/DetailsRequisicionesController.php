@@ -12,81 +12,73 @@ use Illuminate\Support\Facades\DB;
 
 class DetailsRequisicionesController extends Controller
 {
-   public function update(Request $request)
+public function update(Request $request)
 {
     try {
-        // Procesar cada producto
-        $i = 1;
-        while ($request->has('IDDetalle' . $i)) {
-            $IDDetalle = $request->input('IDDetalle' . $i);
-            $detalle = Details::where('IDDetalle', $IDDetalle)->first();
-            
-            if ($detalle) {
-                // Para CO (Cotización)
-                if ($request->newStatus == "CO") {
-                    // Los 3 proveedores son los mismos para todos los productos
-                    $detalle->IDproveedor1 = $request->IDproveedor1;
-                    $detalle->IDproveedor2 = $request->IDproveedor2;
-                    $detalle->IDproveedor3 = $request->IDproveedor3;
-                    
-                    // Campos específicos por producto (3 campos por producto)
-                    $baseField = ($i - 1) * 3 + 1;
-                    
-                    // Proveedor 1 de este producto (campo 1, 4, 7, etc.)
-                    $detalle->PrecioUnitarioSinIva1 = $request->input('PrecioUnitarioSinIva' . $baseField, 0);
-                    $detalle->PorcentajeIVA1 = $request->input('PorcentajeIVA' . $baseField, 0);
-                    $detalle->ImporteIva1 = $request->input('ImporteIva' . $baseField, 0);
-                    $detalle->PrecioUnitarioConIva1 = $request->input('PrecioUnitarioConIva' . $baseField, 0);
-                    $detalle->Retenciones1 = $request->input('Retenciones' . $baseField, 0);
-                    
-                    // Proveedor 2 de este producto (campo 2, 5, 8, etc.)
-                    $detalle->PrecioUnitarioSinIva2 = $request->input('PrecioUnitarioSinIva' . ($baseField + 1), 0);
-                    $detalle->PorcentajeIVA2 = $request->input('PorcentajeIVA' . ($baseField + 1), 0);
-                    $detalle->ImporteIva2 = $request->input('ImporteIva' . ($baseField + 1), 0);
-                    $detalle->PrecioUnitarioConIva2 = $request->input('PrecioUnitarioConIva' . ($baseField + 1), 0);
-                    $detalle->Retenciones2 = $request->input('Retenciones' . ($baseField + 1), 0);
-                    
-                    // Proveedor 3 de este producto (campo 3, 6, 9, etc.)
-                    $detalle->PrecioUnitarioSinIva3 = $request->input('PrecioUnitarioSinIva' . ($baseField + 2), 0);
-                    $detalle->PorcentajeIVA3 = $request->input('PorcentajeIVA' . ($baseField + 2), 0);
-                    $detalle->ImporteIva3 = $request->input('ImporteIva' . ($baseField + 2), 0);
-                    $detalle->PrecioUnitarioConIva3 = $request->input('PrecioUnitarioConIva' . ($baseField + 2), 0);
-                    $detalle->Retenciones3 = $request->input('Retenciones' . ($baseField + 2), 0);
-                }
-                // Para OC (Orden de Compra)
-                else {
-                    $detalle->Proveedor = $request->Proveedor;
-                }
-                
-                $detalle->save();
+        // Obtener todos los detalles de la requisición
+        $detalles = [];
+        foreach ($request->all() as $key => $value) {
+            if (preg_match('/^IDDetalle(\d+)$/', $key, $matches)) {
+                $detalles[$matches[1]] = Details::firstOrNew([
+                    'IDDetalle' => $value
+                ]);
             }
-            $i++;
         }
 
-        // Resto del código igual...
-        if ($request->newStatus == "OC") {
-            Provedor::where('IDProveedor', $request->Proveedor)
-                   ->update(['Comprado' => 1]);
+        // Leer todos los campos numéricos del request y agrupar por índice
+        $campos = ['PrecioUnitarioSinIva', 'PorcentajeIVA', 'ImporteIva', 'PrecioUnitarioConIva', 'Retenciones'];
+        $camposPorIndice = [];
+
+        foreach ($request->all() as $key => $value) {
+            foreach ($campos as $campo) {
+                if (preg_match("/^{$campo}(\d+)$/", $key, $matches)) {
+                    $indice = (int)$matches[1];
+                    $camposPorIndice[$indice][$campo] = $value;
+                }
+            }
         }
 
-        if ($request->newStatus == "CO") {
+        // Asignar valores a cada detalle
+        $detalleCounter = 1;
+        foreach ($detalles as $detalleIndex => $detalle) {
+            for ($p = 1; $p <= 3; $p++) {
+                $currentIndex = $detalleCounter;
+                if (isset($camposPorIndice[$currentIndex])) {
+                    foreach ($campos as $campo) {
+                        $detalle->{$campo . $p} = $camposPorIndice[$currentIndex][$campo] ?? 0;
+                    }
+                }
+                $detalleCounter++;
+            }
+
+            // Asignar los proveedores generales
+            $detalle->IDproveedor1 = $request->IDproveedor1 ?? null;
+            $detalle->IDproveedor2 = $request->IDproveedor2 ?? null;
+            $detalle->IDproveedor3 = $request->IDproveedor3 ?? null;
+            
+            $detalle->save();
+        }
+
+        // Actualizar observaciones si CO
             $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)
-                                      ->where('Ejercicio', $request->Ejercicio)
-                                      ->first();
+                                         ->where('Ejercicio', $request->Ejercicio)
+                                         ->first();
             if ($requisicion) {
                 $requisicion->ObservacionesCot = $request->ObservacionesCot;
-                $requisicion->update();
+                $requisicion->save();
             }
-        }
+      
 
-        return ApiResponse::success(null, $request->newStatus == "CO" 
-            ? 'Se han insertado la cotización correctamente' 
-            : 'La orden de compra se generó correctamente');
-            
+        return ApiResponse::success(null,
+             'Se han insertado la cotización correctamente'
+          );
+
     } catch (Exception $e) {
         return ApiResponse::error($e->getMessage(), 500);
     }
 }
+
+
     public function search(Request $request)
     {
         try {
