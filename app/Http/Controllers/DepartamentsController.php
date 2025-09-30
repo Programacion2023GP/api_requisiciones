@@ -43,7 +43,7 @@ class DepartamentsController extends Controller
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
-    public function create(Request $request)
+   public function create(Request $request)
     {
         try {
             // Crear una nueva instancia de Director

@@ -331,6 +331,131 @@ class   RequisicionesController extends Controller
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
+    public function changestatus(Request $request)
+    {
+        try {
+            // Buscar la requisición por su ID
+            $requisicion = Requisiciones::find($request->id);
+            // Si no se encuentra la requisición, retornar un error
+            if (!$requisicion) {
+                return ApiResponse::error("Requisición no encontrada", 404);
+            }
+
+            // Actualizar la requisición según el estado
+            switch ($request->status) {
+                case "CP":
+                    $requisicion->FechaCaptura = null;
+                    $requisicion->FechaAutorizacion = null;
+                    $requisicion->FechaAsignacion = null;
+                    $requisicion->FechaCotizacion = null;
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+                    $requisicion->FechaVoBo = null;
+
+                    $requisicion->UsuarioAU = null;
+                    $requisicion->FechaVoBo = null;
+                    $requisicion->UsuarioAS = null;
+                    $requisicion->UsuarioCO = null;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioRE = null;
+
+                    $requisicion->UsuarioVoBo = null;
+
+                    $requisicion->Status = $request->status;
+
+                case "AU":
+                    $requisicion->FechaAutorizacion = null;
+
+                    $requisicion->FechaAsignacion = null;
+                    $requisicion->FechaCotizacion = null;
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+                    $requisicion->FechaVoBo = null;
+
+                    $requisicion->UsuarioAU = null;
+                    $requisicion->UsuarioAS = null;
+                    $requisicion->UsuarioCO = null;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioRE = null;
+                    $requisicion->UsuarioVoBo = null;
+                    $requisicion->Status = $request->status;
+                    break;
+                case "VoBo":
+                    $requisicion->FechaVoBo = null;
+                    $requisicion->FechaCotizacion = null;
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+
+                    $requisicion->FechaVoBo = null;
+                    $requisicion->UsuarioAS = null;
+                    $requisicion->UsuarioCO = null;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioCA = null;
+                    $requisicion->UsuarioVoBo = null;
+                    break;
+                case "AS":
+                    $requisicion->UsuarioAS = null;
+                    $requisicion->FechaVoBo = null;
+                    $requisicion->FechaCotizacion = null;
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+                    $requisicion->Status = $request->status;
+                    $requisicion->FechaVoBo = null;
+                    $requisicion->UsuarioAS = null;
+                    $requisicion->UsuarioCO = null;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioCA = null;
+                    $requisicion->UsuarioVoBo = null;
+                    break;
+                case "CO":
+                    $requisicion->FechaCotizacion = null;
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+                    $requisicion->Status = $request->status;
+                    $requisicion->UsuarioCO = null;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioCA = null;
+                    break;
+                case "OC":
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+                    $requisicion->Status = $request->status;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioCA = null;
+                    break;
+                case "SU":
+                    $requisicion->FechaOrdenCompra = null;
+                    $requisicion->FechaCancelacion = null;
+                    $requisicion->Status = $request->status;
+                    $requisicion->UsuarioOC = null;
+                    $requisicion->UsuarioCA = null;
+
+
+
+                    break;
+                case "CA":
+                    $requisicion->Status = $request->status;
+                    break;
+                default:
+            }
+
+
+            // Guardar los cambios en la base de datos
+            $requisicion->update();
+
+            return ApiResponse::success($requisicion, 'Requisición actualizada con éxito');
+        } catch (Exception $e) {
+            DB::rollBack(); // Revertir cambios si hay un error
+            if ($e->getMessage() == 'No se puede avanzar porque no se han cotizado todos los productos') {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
+            if ($e->getMessage() == 'No se puede avanzar porque no se han asignado provedor a todos los productos') {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
+
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
     public function vobo(Request $request)
     {
         try {
@@ -362,6 +487,7 @@ class   RequisicionesController extends Controller
             return ApiResponse::error("No se pudieron obtener los productos", 500);
         }
     }
+
     public function showRequisicion(Request $request)
     {
         try {
@@ -378,7 +504,6 @@ class   RequisicionesController extends Controller
     public function detailsRequisicion(Request $request)
     {
         try {
-            // return "#";
             $products = DB::table('products_details')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
 
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
@@ -390,7 +515,20 @@ class   RequisicionesController extends Controller
     public function products(Request $request)
     {
         try {
-            $products = DB::table('det_requisicion')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
+            $products = DB::table('det_requisicion as d')
+                ->leftJoin('requisiciones as r', function ($join) {
+                    $join->on('r.Ejercicio', '=', 'd.Ejercicio')
+                        ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
+                })
+                ->select(
+                    'd.*',
+                    'r.ObservacionesCot'
+                )
+                ->where('d.Ejercicio', $request->Ejercicio)
+                ->where('d.IDRequisicion', $request->IDRequisicion)
+                ->orderBy('d.IDDetalle', 'desc') // Orden descendente por IDDetalle
+                ->get();
+
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
         } catch (\Exception $e) {
             return ApiResponse::error("No se pudieron obtener los productos", 500);

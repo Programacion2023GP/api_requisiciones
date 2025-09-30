@@ -127,7 +127,7 @@ class UsersController extends Controller
                     "RequisicionesAdd"   => 1,
                     "SeguimientoRequis"  => 1,
                     "Soporte"            => 1,
-                    "VoBo"               => 1,
+                    // "VoBo"               => 1,
                     // "Permisos"           => 1,
                     // "Usuarios"           => 1,
                 ]), $user->Usuario);
@@ -152,7 +152,7 @@ class UsersController extends Controller
                 //     throw new Exception('Ya existe el director');
                 // }
                 (new DirectorController())->create($request);
-                (new AutorizadoresController())->create($request);
+                (new AutorizadoresController())->create($request);   
             }
 
             DB::commit(); // Confirma la transacción

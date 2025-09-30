@@ -58,6 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/update', [RequisicionesController::class, 'update']);
         Route::put('/vobo', [RequisicionesController::class, 'vobo']);
         Route::post('/show', [RequisicionesController::class, 'show']);
+        Route::post('/changeStatus', [RequisicionesController::class, 'changestatus']);
+
         Route::post('/detailsRequisicion', [RequisicionesController::class, 'detailsRequisicion']);
 
         //obtener la info de la requisicion
@@ -68,6 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/requisicionesdetails')->group(function () {
         Route::put('/update', [DetailsRequisicionesController::class, 'update']);
+        Route::put('/ordencompra', [DetailsRequisicionesController::class, 'ordenCompra']);
+
         Route::post('/search', [DetailsRequisicionesController::class, 'search']);
 
   
