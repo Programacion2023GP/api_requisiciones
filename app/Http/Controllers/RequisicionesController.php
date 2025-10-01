@@ -139,106 +139,105 @@ class   RequisicionesController extends Controller
             // Verificar si se ha pasado una consulta SQL
             $consulta  = $request->sql;
             if ($request->filled('sql')) {
-                if (Auth::user()->Rol == 'CAPTURA') {
+                if (Auth::user()->Rol == 'CAPTURA' || Auth::user()->Rol == 'DIRECTOR' ) {
                     $departamentoID = Auth::user()->IDDepartamento;
+
+                    // Obtener departamentos relacionados
                     $departamentosDire = RelUsuarioDepartamento::where("IDUsuario", Auth::user()->IDUsuario)
                         ->pluck("IDDepartamento")
-                        ->toArray(); // convertir a array simple
+                        ->toArray();
 
-                    $ids = implode(',', $departamentosDire);
-                    $consulta = $consulta . ' AND IDDepartamento IN (' . $ids . ')';
+                    // Asegurar que haya al menos un departamento
+                    if (!empty($departamentosDire)) {
+                        $ids = implode(',', $departamentosDire);
+                        $consulta .= ' AND IDDepartamento IN (' . $ids . ')';
+                    }
 
-                    // Definir condiciones basadas en el departamento
+                    // Guardar estado previo de la consulta
                     $consultaPrev = $consulta;
 
-                    switch ($departamentoID) {
-                        case 84: // Taller Municipal
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if (!isEmpty($usuarioVobo)) {
-                                if ( $usuarioVobo->Permiso == "S") {
-                                    $consulta = $consultaPrev . ' OR IDTipo = 5 ';
-                                }
-                            }
-                            break;
-                        case 83: // Servicios Generales
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if (!isEmpty($usuarioVobo)) {
+                    // Consultar permiso VoBo una sola vez
+                    $usuarioVobo = DB::table('relmenuusuario')
+                        ->where('Usuario', Auth::user()->Usuario)
+                        ->where('IdMenu', "VoBo")
+                        ->first();
 
-                                if ($usuarioVobo->Permiso == "S") {
-                                    $consulta = $consultaPrev . ' OR IDTipo = 7 ';
-                                }
-                            }
-                            break;
-                        case 27: // Informática
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
+                    // Solo si tiene permiso 'S' se consideran los casos especiales
+                    if (!is_null($usuarioVobo) && $usuarioVobo->Permiso == "S") {
+                        switch ($departamentoID) {
+                            case 84: // Taller Municipal
+                                $consulta .= ' OR IDTipo = 5';
+                                break;
 
-                            $consultaPrev = $consulta;
-                            if (!isEmpty($usuarioVobo)) {
+                            case 83: // Servicios Generales
+                                $consulta .= ' OR IDTipo = 7';
+                                break;
 
-                                if ($usuarioVobo->Permiso == "S") {
-                                    $consulta = $consultaPrev . ' OR IDTipo = 6 ';
-                                }
-                            }
-                            break;
-                        default:
+                            case 27: // Informática
+                                $consulta .= ' OR IDTipo = 6';
+                                break;
 
-                            break;
+                            default:
+                                // No agregar nada
+                                break;
+                        }
                     }
                 }
+
                 if (Auth::user()->Rol == 'REQUISITOR') {
                     $consulta .= " AND UsuarioAS = '" . Auth::user()->Usuario . "'";
                 }
                 // Si el rol es 'DIRECTOR', agregamos condiciones adicionales
-                if (Auth::user()->Rol == 'DIRECTOR') {
-                    $consultaPrev = $consulta;
+                // if (Auth::user()->Rol == 'DIRECTOR') {
+                //     $consultaPrev = $consulta;
 
-                    // Definir condiciones basadas en el departamento
-                    $departamentoID = Auth::user()->IDDepartamento;
-                    $departamentosDire = RelUsuarioDepartamento::where("IDUsuario", Auth::user()->IDUsuario)
-                        ->pluck("IDDepartamento")
-                        ->toArray(); // convertir a array simple
+                //     // Definir condiciones basadas en el departamento
+                //     $departamentoID = Auth::user()->IDDepartamento;
+                //     $departamentosDire = RelUsuarioDepartamento::where("IDUsuario", Auth::user()->IDUsuario)
+                //         ->pluck("IDDepartamento")
+                //         ->toArray(); // convertir a array simple
 
-                    $ids = implode(',', $departamentosDire); // "1,2,3"
+                //     $ids = implode(',', $departamentosDire); // "1,2,3"
 
-                    $consulta = $consulta . ' AND IDDepartamento IN (' . $ids . ')';
+                //     $consulta = $consulta . ' AND IDDepartamento IN (' . $ids . ')';
 
 
-                    // Añadir condiciones específicas según el departamento
-                    switch ($departamentoID) {
-                        case 84: // Taller Municipal
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if (!isEmpty($usuarioVobo)) {
-                                # code...
-                                if ($usuarioVobo->Permiso == "S") {
-                                    $consulta = $consultaPrev . ' OR IDTipo = 5 ';
-                                }
-                            }
+                //     // Añadir condiciones específicas según el departamento
+                //     switch ($departamentoID) {
+                //         case 84: // Taller Municipal
+                //             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
+                //             if (!isEmpty($usuarioVobo)) {
+                //                 # code...
+                //                 if ($usuarioVobo->Permiso == "S") {
+                //                     $consulta = $consultaPrev . ' OR IDTipo = 5 ';
+                //                 }
+                //             }
 
-                            break;
-                        case 83: // Servicios Generales
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if (!isEmpty($usuarioVobo)) {
+                //             break;
+                //         case 83: // Servicios Generales
+                //             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
+                //             if (!isEmpty($usuarioVobo)) {
 
-                                if ($usuarioVobo->Permiso == "S") {
-                                    $consulta = $consultaPrev . ' OR IDTipo = 7 ';
-                                }
-                            }
-                            break;
-                        case 27: // Informática
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            $consultaPrev = $consulta;
-                            if (!isEmpty($usuarioVobo)) {
+                //                 if ($usuarioVobo->Permiso == "S") {
+                //                     $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                //                 }
+                //             }
+                //             break;
+                //         case 27: // Informática
+                //             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
+                //             $consultaPrev = $consulta;
+                //             if (!isEmpty($usuarioVobo)) {
 
-                                if ($usuarioVobo->Permiso == "S") {
-                                    $consulta = $consultaPrev . ' OR IDTipo = 6 ';
-                                }
-                            }
-                            break;
-                        default:
+                //                 if ($usuarioVobo->Permiso == "S") {
+                //                     $consulta = $consultaPrev . ' OR IDTipo = 6 ';
+                //                 }
+                //             }
+                //             break;
+                //         default:
 
-                            break;
-                    }
-                }
+                //             break;
+                //     }
+                // }
 
                 // Ejecutar la consulta SQL
                 $sql = DB::raw($consulta);
