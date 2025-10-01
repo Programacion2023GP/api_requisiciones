@@ -152,21 +152,23 @@ class   RequisicionesController extends Controller
                     switch ($departamentoID) {
                         case 84: // Taller Municipal
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if ($usuarioVobo->VoBo =="S") {
+                            if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 5 ';
                             }
 
                             break;
                         case 83: // Servicios Generales
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
-                            if ($usuarioVobo->VoBo =="S") {
+
+                            if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 7 ';
                             }
                             break;
                         case 27: // Informática
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+
                             $consultaPrev = $consulta;
-                            if ($usuarioVobo->VoBo =="S") {
+                            if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 6 ';
                             }
 
@@ -198,21 +200,21 @@ class   RequisicionesController extends Controller
                     switch ($departamentoID) {
                         case 84: // Taller Municipal
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if ($usuarioVobo->VoBo =="S") {
+                            if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 5 ';
                             }
 
                             break;
                         case 83: // Servicios Generales
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
-                            if ($usuarioVobo->VoBo =="S") {
+                            if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 7 ';
                             }
                             break;
                         case 27: // Informática
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
                             $consultaPrev = $consulta;
-                            if ($usuarioVobo->VoBo =="S") {
+                            if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 6 ';
                             }
 
