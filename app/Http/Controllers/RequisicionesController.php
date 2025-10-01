@@ -158,14 +158,14 @@ class   RequisicionesController extends Controller
 
                             break;
                         case 83: // Servicios Generales
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
 
                             if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 7 ';
                             }
                             break;
                         case 27: // Informática
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
 
                             $consultaPrev = $consulta;
                             if ($usuarioVobo->Permiso =="S") {
@@ -206,13 +206,13 @@ class   RequisicionesController extends Controller
 
                             break;
                         case 83: // Servicios Generales
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
                             if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 7 ';
                             }
                             break;
                         case 27: // Informática
-                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->first();
+                            $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
                             $consultaPrev = $consulta;
                             if ($usuarioVobo->Permiso =="S") {
                                 $consulta = $consultaPrev . ' OR IDTipo = 6 ';
