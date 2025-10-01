@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use function PHPUnit\Framework\isEmpty;
+
 class   RequisicionesController extends Controller
 {
     public function create(Request $request)
@@ -152,26 +154,31 @@ class   RequisicionesController extends Controller
                     switch ($departamentoID) {
                         case 84: // Taller Municipal
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if ($usuarioVobo->Permiso =="S") {
-                                $consulta = $consultaPrev . ' OR IDTipo = 5 ';
+                            if (!isEmpty($usuarioVobo)) {
+                                if ( $usuarioVobo->Permiso == "S") {
+                                    $consulta = $consultaPrev . ' OR IDTipo = 5 ';
+                                }
                             }
-
                             break;
                         case 83: // Servicios Generales
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
+                            if (!isEmpty($usuarioVobo)) {
 
-                            if ($usuarioVobo->Permiso =="S") {
-                                $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                                if ($usuarioVobo->Permiso == "S") {
+                                    $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                                }
                             }
                             break;
                         case 27: // Informática
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
 
                             $consultaPrev = $consulta;
-                            if ($usuarioVobo->Permiso =="S") {
-                                $consulta = $consultaPrev . ' OR IDTipo = 6 ';
-                            }
+                            if (!isEmpty($usuarioVobo)) {
 
+                                if ($usuarioVobo->Permiso == "S") {
+                                    $consulta = $consultaPrev . ' OR IDTipo = 6 ';
+                                }
+                            }
                             break;
                         default:
 
@@ -200,24 +207,32 @@ class   RequisicionesController extends Controller
                     switch ($departamentoID) {
                         case 84: // Taller Municipal
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if ($usuarioVobo->Permiso =="S") {
-                                $consulta = $consultaPrev . ' OR IDTipo = 5 ';
+                            if (!isEmpty($usuarioVobo)) {
+                                # code...
+                                if ($usuarioVobo->Permiso == "S") {
+                                    $consulta = $consultaPrev . ' OR IDTipo = 5 ';
+                                }
                             }
 
                             break;
                         case 83: // Servicios Generales
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
-                            if ($usuarioVobo->Permiso =="S") {
-                                $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                            if (!isEmpty($usuarioVobo)) {
+
+                                if ($usuarioVobo->Permiso == "S") {
+                                    $consulta = $consultaPrev . ' OR IDTipo = 7 ';
+                                }
                             }
                             break;
                         case 27: // Informática
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
                             $consultaPrev = $consulta;
-                            if ($usuarioVobo->Permiso =="S") {
-                                $consulta = $consultaPrev . ' OR IDTipo = 6 ';
-                            }
+                            if (!isEmpty($usuarioVobo)) {
 
+                                if ($usuarioVobo->Permiso == "S") {
+                                    $consulta = $consultaPrev . ' OR IDTipo = 6 ';
+                                }
+                            }
                             break;
                         default:
 
