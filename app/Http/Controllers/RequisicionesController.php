@@ -83,12 +83,12 @@ class   RequisicionesController extends Controller
                     if ($request->has($cantidadKey)) {
                         $cantidad = $request->input($cantidadKey);
                         if ($update) {
-                            if ($update && $request->filled($iDDetalleKey) && $cantidad) {
-                                $idDetalle = $request->input($iDDetalleKey);
-                                $detailsRequisitionController->update($idDetalle, $cantidad, $valor);
-                            } else {
-                                $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
-                            }
+                            // if ($update && $request->filled($iDDetalleKey) && $cantidad) {
+                            //     $idDetalle = $request->input($iDDetalleKey);
+                            //     $detailsRequisitionController->update($idDetalle, $cantidad, $valor);
+                            // } else {
+                            //     $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
+                            // }
                         } else {
                             $cant = $request->input($cantidadKey);
 
@@ -116,7 +116,7 @@ class   RequisicionesController extends Controller
     {
         try {
             //code...
-            $requisicion = Requisiciones::where("Id", $request->id)->first(); // Cambiar get() por first()
+            $requisicion = Requisiciones::where("IDRequisicion", $request->id)->first(); // Cambiar get() por first()
             if (!$requisicion) {
                 return ApiResponse::error("Requisición no encontrada", 404);
             } else {
@@ -127,7 +127,7 @@ class   RequisicionesController extends Controller
 
                 // Actualizar el registro
                 $requisicion->save(); // Usar save() en lugar de update()
-
+                return $requisicion;
                 return ApiResponse::success($requisicion, 'Requisición asignada con éxito');
             }
         } catch (Exception $e) {
