@@ -78,16 +78,21 @@ class   RequisicionesController extends Controller
                     $index = substr($key, 11); // Obtener índice numérico
                     $cantidadKey = 'Cantidad' . $index;
                     $iDDetalleKey = 'IDDetalle' . $index;
+                    // $iDDetalleKey = 'IDDetalle' . $index;
 
                     if ($request->has($cantidadKey)) {
                         $cantidad = $request->input($cantidadKey);
                         if ($update) {
-                            if ($request->has($iDDetalleKey) > 0) {
-
+                            if ($update && $request->filled($iDDetalleKey) && $cantidad) {
+                                $idDetalle = $request->input($iDDetalleKey);
+                                $detailsRequisitionController->update($idDetalle, $cantidad, $valor);
+                            } else {
                                 $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
                             }
                         } else {
-                            $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
+                            $cant = $request->input($cantidadKey);
+
+                            $detailsRequisitionController->create($requisicion->IDRequisicion, $cant, $valor);
                         }
                     } else {
                         Log::warning("Clave de cantidad no encontrada: $cantidadKey");
@@ -104,7 +109,7 @@ class   RequisicionesController extends Controller
             DB::rollBack(); // Revertir cambios si hay un error
 
             // Log::error($e->getMessage()); // Mejor usar Log::error() para registrar errores
-            return ApiResponse::error("La requisición no se pudo crear", 500);
+            return ApiResponse::error($e->getMessage(), 500);
         }
     }
     public function asignedAutorized(Request $request)
