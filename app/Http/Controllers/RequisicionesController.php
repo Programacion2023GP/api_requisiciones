@@ -83,12 +83,12 @@ class   RequisicionesController extends Controller
                     if ($request->has($cantidadKey)) {
                         $cantidad = $request->input($cantidadKey);
                         if ($update) {
-                            if ($update && $request->filled($iDDetalleKey) && $cantidad) {
-                                $idDetalle = $request->input($iDDetalleKey);
-                                $detailsRequisitionController->update($idDetalle, $cantidad, $valor);
-                            } else {
-                                $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
-                            }
+                            // if ($update && $request->filled($iDDetalleKey) && $cantidad) {
+                            //     $idDetalle = $request->input($iDDetalleKey);
+                            //     $detailsRequisitionController->update($idDetalle, $cantidad, $valor);
+                            // } else {
+                            //     $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
+                            // }
                         } else {
                             $cant = $request->input($cantidadKey);
 
