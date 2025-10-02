@@ -110,6 +110,7 @@ class UsersController extends Controller
                 }
                 // Crear usuario
                 $user = User::create($request->all());
+                // RelUsuarioDepartamento::
                 $message = 'Usuario creado con éxito';
             }
 

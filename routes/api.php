@@ -66,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/showRequisicion', [RequisicionesController::class, 'showRequisicion']);
 
         Route::post('/products ', [RequisicionesController::class, 'products']);
+        Route::post('/productsPlainText ', [RequisicionesController::class, 'productsPlainText']);
         Route::post('/asignedAutorized ', [RequisicionesController::class, 'asignedAutorized']);
     });
     Route::prefix('/requisicionesdetails')->group(function () {
@@ -73,8 +74,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/ordencompra', [DetailsRequisicionesController::class, 'ordenCompra']);
 
         Route::post('/search', [DetailsRequisicionesController::class, 'search']);
-
-  
     });
     Route::prefix('/autorizadores')->group(function () {
         Route::get('/cotizadores', [AutorizadoresController::class, 'indexAutorizadores']);
@@ -89,11 +88,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/director/{id}', [DepartamentsController::class, 'director']);
 
         Route::put('/update', [DepartamentsController::class, 'update']);
-     
+
         Route::post('/create', [DepartamentsController::class, 'create']);
     });
 });
-Route::get('/hola', function() {
+Route::get('/hola', function () {
     return "saludos";
 });
 

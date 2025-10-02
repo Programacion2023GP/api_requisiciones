@@ -155,7 +155,7 @@ class   RequisicionesController extends Controller
                         case 84: // Taller Municipal
                             $usuarioVobo = DB::table('relmenuusuario')->where('Usuario', Auth::user()->Usuario)->where('IdMenu', "VoBo")->first();
                             if (!isEmpty($usuarioVobo)) {
-                                if ( $usuarioVobo->Permiso == "S") {
+                                if ($usuarioVobo->Permiso == "S") {
                                     $consulta = $consultaPrev . ' OR IDTipo = 5 ';
                                 }
                             }
@@ -529,6 +529,7 @@ class   RequisicionesController extends Controller
         }
     }
 
+
     public function products(Request $request)
     {
         try {
@@ -547,6 +548,106 @@ class   RequisicionesController extends Controller
                 ->get();
 
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
+        } catch (\Exception $e) {
+            return ApiResponse::error("No se pudieron obtener los productos", 500);
+        }
+    }
+
+    public function productsWithIndex(Request $request)
+    {
+        try {
+            // Parámetros obligatorios
+            $ejercicio = $request->Ejercicio ?? null;
+            $idRequisicion = $request->IDRequisicion ?? null;
+            if (!$ejercicio || !$idRequisicion) {
+                return ApiResponse::validationError('Parámetros obligatorios: Ejercicio y IDRequisicion', [], 422);
+            }
+
+            // Construir query base (manteniendo joins y selects)
+            $baseQuery = DB::table('det_requisicion as d')
+                ->leftJoin('requisiciones as r', function ($join) {
+                    $join->on('r.Ejercicio', '=', 'd.Ejercicio')
+                        ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
+                })
+                ->select('d.*', 'r.ObservacionesCot')
+                ->where('d.Ejercicio', $ejercicio)
+                ->where('d.IDRequisicion', $idRequisicion);
+
+            // Modo streaming opcional (NDJSON) para que el front procese incrementalmente
+            if ($request->boolean('stream')) {
+                $streamQuery = DB::table('det_requisicion as d')
+                    ->leftJoin('requisiciones as r', function ($join) {
+                        $join->on('r.Ejercicio', '=', 'd.Ejercicio')
+                            ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
+                    })
+                    ->select('d.*', 'r.ObservacionesCot')
+                    ->where('d.Ejercicio', $ejercicio)
+                    ->where('d.IDRequisicion', $idRequisicion)
+                    ->orderBy('d.IDDetalle', 'desc');
+
+                $callback = function () use ($streamQuery) {
+                    foreach ($streamQuery->cursor() as $row) {
+                        echo json_encode($row) . "\n"; // NDJSON
+                        flush();
+                    }
+                };
+
+                return response()->stream($callback, 200, ['Content-Type' => 'application/x-ndjson']);
+            }
+
+            // Paginación por defecto: evita grandes cargas en memoria y en la red
+            $perPage = intval($request->per_page ?? 100);
+            $page = max(1, intval($request->page ?? 1));
+            if ($perPage <= 0) {
+                $perPage = 100;
+            }
+
+            $total = $baseQuery->count();
+
+            $items = $baseQuery->orderBy('d.IDDetalle', 'desc')
+                ->forPage($page, $perPage)
+                ->get();
+
+            $meta = [
+                'total' => $total,
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => (int) ceil($total / $perPage),
+            ];
+
+            return ApiResponse::success(['items' => $items, 'meta' => $meta], 'Productos obtenidos con éxito');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return ApiResponse::error("No se pudieron obtener los productos", 500);
+        }
+    }
+
+    public function productsPlainText(Request $request)
+    {
+        try {
+            $products = DB::table('det_requisicion as d')
+                ->leftJoin('requisiciones as r', function ($join) {
+                    $join->on('r.Ejercicio', '=', 'd.Ejercicio')
+                        ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
+                })
+                ->select(
+                    'd.*',
+                    'r.ObservacionesCot'
+                )
+                ->where('d.Ejercicio', $request->Ejercicio)
+                ->where('d.IDRequisicion', $request->IDRequisicion)
+                ->orderBy('d.IDDetalle', 'desc') // Orden descendente por IDDetalle
+                ->get();
+
+            // Convierte el resultado a texto plano (ejemplo: concatenando campos principales)
+            // Convierte cada producto en "clave=valor" separado por |
+            $textoPlano = $products->map(function ($p) {
+                return collect((array) $p)
+                    ->map(fn($v, $k) => "$k:$v")
+                    ->implode(" | ");
+            })->implode("\n"); // separa cada producto por salto de línea
+
+            return ApiResponse::success($textoPlano, 'Productos obtenidos con éxito');
         } catch (\Exception $e) {
             return ApiResponse::error("No se pudieron obtener los productos", 500);
         }
