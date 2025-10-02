@@ -636,6 +636,7 @@ class   RequisicionesController extends Controller
                     'd.*',
                     'r.ObservacionesCot'
                 )
+                
                 ->where('d.Ejercicio', $request->Ejercicio)
                 ->where('d.IDRequisicion', $request->IDRequisicion)
                 ->orderBy('d.IDDetalle', 'desc') // Orden descendente por IDDetalle
