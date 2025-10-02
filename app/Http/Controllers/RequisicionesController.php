@@ -139,7 +139,7 @@ class   RequisicionesController extends Controller
             // Verificar si se ha pasado una consulta SQL
             $consulta  = $request->sql;
             if ($request->filled('sql')) {
-                if (Auth::user()->Rol == 'CAPTURA' || Auth::user()->Rol == 'DIRECTOR' ) {
+                if (Auth::user()->Rol == 'CAPTURA' || Auth::user()->Rol == 'DIRECTOR') {
                     $departamentoID = Auth::user()->IDDepartamento;
 
                     // Obtener departamentos relacionados
@@ -532,7 +532,7 @@ class   RequisicionesController extends Controller
     {
         try {
             $products = DB::table('det_requisicion as d')
-                ->leftJoin('requisiciones as r', function ($join) {
+                ->join('requisiciones as r', function ($join) {
                     $join->on('r.Ejercicio', '=', 'd.Ejercicio')
                         ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
                 })
@@ -540,10 +540,13 @@ class   RequisicionesController extends Controller
                     'd.*',
                     'r.ObservacionesCot'
                 )
-                ->where('d.Ejercicio', $request->Ejercicio)
-                ->where('d.IDRequisicion', $request->IDRequisicion)
-                ->orderBy('d.IDDetalle', 'desc') // Orden descendente por IDDetalle
+                ->where([
+                    ['d.Ejercicio', '=', $request->Ejercicio],
+                    ['d.IDRequisicion', '=', $request->IDRequisicion]
+                ])
+                ->orderByDesc('d.IDDetalle') // Más claro y expresivo
                 ->get();
+
 
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
         } catch (\Exception $e) {
