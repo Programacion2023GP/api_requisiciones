@@ -33,7 +33,7 @@ class ProvedoresController extends Controller
             //     // Obtener las empresas de la respuesta de la API Node.js
             //     $empresas = $response->json();
 
-            $proveedores = Provedor::orderBy('IDProveedor', 'desc')->get();
+            $proveedores = Provedor::orderBy('NombreCompleto', 'desc')->get();
 
             // $empresasConRfcCoincidente = [];
 
