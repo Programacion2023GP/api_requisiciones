@@ -22,6 +22,8 @@ class Provedor extends Model
         'FechaAlta',
         'Usuario',
         'FUM',
-        'UsuarioFUM'
+        'UsuarioFUM',
+        'DeRelleno',
+        'Activo'
     ];
 }
