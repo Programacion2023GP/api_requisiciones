@@ -253,7 +253,7 @@ class UsersController extends Controller
                     "group" => $departamentosUser,
                     "role" => $user->Rol,
                     "redirect" => "/#/" . $route,
-                    "centro_costo" => $departamento->Centro_Costo,
+                    "centro_costo" => $departamentosUser,
                     "name" => $user->NombreCompleto,
 
                 ], 'Bienvenido al sistema');
