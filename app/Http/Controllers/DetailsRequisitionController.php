@@ -34,13 +34,12 @@ class DetailsRequisitionController extends Controller
          Log::error("Error $e: " . $e->getMessage());
       }
    }
-   public function delete(int $id, int $ejercicio)
+   public function delete(int $id)
    {
       try {
-         $details = DetailRequisition::where('IDRequisicion', $id)->where('Ejercicio', $ejercicio)->get();
-         foreach ($details as $detail) {
-            $detail->delete();
-         }
+         $details = DetailRequisition::find($id);
+            $details->delete();
+         
       } catch (Exception $e) {
          Log::error("Error $e: " . $e->getMessage());
       }

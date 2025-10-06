@@ -71,34 +71,31 @@ class   RequisicionesController extends Controller
             $requisicion->save();
             $datos = $request->all();
 
-            foreach ($datos as $key => $valor) {
-                if (strpos($key, 'Descripcion') === 0) {
-                    // Log::info("Clave de descripción encontrada: $key");
+            // --- Procesar los productos ---
+            if ($request->has('Productos') && is_array($request->Productos)) {
+                foreach ($request->Productos as $producto) {
+                    $cantidad = $producto['Cantidad'] ?? null;
+                    $descripcion = $producto['Descripcion'] ?? null;
+                    $idDetalle = $producto['IDDetalle'] ?? null;
 
-                    $index = substr($key, 11); // Obtener índice numérico
-                    $cantidadKey = 'Cantidad' . $index;
-                    $iDDetalleKey = 'IDDetalle' . $index;
-                    // $iDDetalleKey = 'IDDetalle' . $index;
-
-                    if ($request->has($cantidadKey)) {
-                        $cantidad = $request->input($cantidadKey);
-                        if ($update) {
-                            // if ($update && $request->filled($iDDetalleKey) && $cantidad) {
-                            //     $idDetalle = $request->input($iDDetalleKey);
-                            //     $detailsRequisitionController->update($idDetalle, $cantidad, $valor);
-                            // } else {
-                            //     $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $valor);
-                            // }
+                    if ($update && !empty($idDetalle)) {
+                        if (!$cantidad || !$descripcion) {
+                            // --- Borrar producto si tiene IDDetalle pero ahora está vacío ---
+                            $detailsRequisitionController->delete($idDetalle);
+                            continue;
                         } else {
-                            $cant = $request->input($cantidadKey);
-
-                            $detailsRequisitionController->create($requisicion->IDRequisicion, $cant, $valor);
+                            $detailsRequisitionController->update($idDetalle, $cantidad, $descripcion);
+                            continue;
                         }
-                    } else {
-                        Log::warning("Clave de cantidad no encontrada: $cantidadKey");
+                    }
+
+                    // Si es creación o no tiene IDDetalle y tiene datos
+                    if ($cantidad && $descripcion) {
+                        $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $descripcion);
                     }
                 }
             }
+
 
 
 
@@ -641,7 +638,7 @@ class   RequisicionesController extends Controller
                     'd.*',
                     'r.ObservacionesCot'
                 )
-                
+
                 ->where('d.Ejercicio', $request->Ejercicio)
                 ->where('d.IDRequisicion', $request->IDRequisicion)
                 ->orderBy('d.IDDetalle', 'desc') // Orden descendente por IDDetalle
