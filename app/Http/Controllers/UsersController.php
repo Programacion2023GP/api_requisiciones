@@ -153,7 +153,7 @@ class UsersController extends Controller
                 //     throw new Exception('Ya existe el director');
                 // }
                 (new DirectorController())->create($request);
-                (new AutorizadoresController())->create($request);   
+                (new AutorizadoresController())->create($request);
             }
 
             DB::commit(); // Confirma la transacción
@@ -253,7 +253,7 @@ class UsersController extends Controller
                     "group" => $departamentosUser,
                     "role" => $user->Rol,
                     "redirect" => "/#/" . $route,
-                    "centro_costo" => $departamentosUser,
+                    "centro_costo" => $departamento->Centro_Costo,
                     "name" => $user->NombreCompleto,
 
                 ], 'Bienvenido al sistema');
