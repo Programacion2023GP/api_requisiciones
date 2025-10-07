@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Requisiciones extends Model
 {
     use HasFactory;
-    protected $primaryKey = 'Id';
+    protected $primaryKey = 'IDRequisicion';
     protected $table = 'requisiciones';
     public $timestamps = false;
 }
