@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AutorizadoresController;
+use App\Http\Controllers\CatDetailsTiposController;
 use App\Http\Controllers\DepartamentosController;
 use App\Http\Controllers\DepartamentsController;
 use App\Http\Controllers\DetailsRequisicionesController;
@@ -77,6 +78,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/autorizadores')->group(function () {
         Route::get('/cotizadores', [AutorizadoresController::class, 'indexAutorizadores']);
+    });
+     Route::prefix('/detailstypes')->group(function () {
+        Route::get('/index', [CatDetailsTiposController::class, 'index']);
+        Route::post('/createorUpdate', [CatDetailsTiposController::class, 'createorUpdate']);
+        Route::delete('/delete/{id}', [CatDetailsTiposController::class, 'destroy']);
+
+
     });
     Route::prefix('/provedores')->group(function () {
         Route::get('/index', [ProvedoresController::class, 'index']);
