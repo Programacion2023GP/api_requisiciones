@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\ApiResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
-use Exception;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\AutorizadoresController;
 use App\Models\Autorizadores;
@@ -53,15 +52,16 @@ class UsersController extends Controller
                         'autorizadores.Permiso_Cotizar',
                         'autorizadores.Permiso_Orden_Compra',
                         'autorizadores.Permiso_Surtir',
-                        'cat_departamentos.Nombre_Departamento'
-
+                        'cat_departamentos.Nombre_Departamento',
+                        DB::raw('GROUP_CONCAT(relusuariodepartamento.IDDepartamento SEPARATOR ",") as IDDepartamentos')
 
 
 
                     )
                     ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
                     ->leftJoin('cat_departamentos', 'cat_departamentos.IDDepartamento', '=', 'cat_usuarios.IDDepartamento')
-
+                    ->leftJoin('relusuariodepartamento', 'relusuariodepartamento.IDUsuario', '=', 'cat_usuarios.IDUsuario')
+                    ->groupBy("IDUsuario")
                     ->orderBy('IDUsuario', 'desc')
                     ->get();
             }
@@ -101,6 +101,7 @@ class UsersController extends Controller
                 // Actualizar usuario
 
                 $user->update($request->all());
+
                 $message = 'Usuario actualizado con éxito';
             } else {
                 $exists = User::where('Usuario', $request->Usuario)->exists();
@@ -110,8 +111,32 @@ class UsersController extends Controller
                 }
                 // Crear usuario
                 $user = User::create($request->all());
-                // RelUsuarioDepartamento::
+
                 $message = 'Usuario creado con éxito';
+            }
+            // Crear relaciones usuario-departamento
+            // $relUsuarioDepartamentoController = new RelUsuarioDepartamentoController();
+            // $relUsuarioDepartamentoController->storeDepartamentos($user->IDUsuario, $request->IdsDepartamentos);}
+            // 2️⃣ Eliminar relaciones que ya no estén seleccionadas
+            RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)
+                ->whereNotIn('IDDepartamento', $request->IdsDepartamentos)
+                ->delete();
+
+            // 3️⃣ Insertar los nuevos (solo los que no existan)
+            $existentes = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)
+                ->pluck('IDDepartamento')
+                ->toArray();
+
+            $nuevos = collect($request->IdsDepartamentos)
+                ->diff($existentes)
+                ->map(fn($idDep) => [
+                    'IDUsuario' => $user->IDUsuario,
+                    'IDDepartamento' => $idDep,
+                ])
+                ->toArray();
+
+            if (count($nuevos)) {
+                RelUsuarioDepartamento::insert($nuevos);
             }
 
             // Lógica de roles
@@ -158,7 +183,7 @@ class UsersController extends Controller
 
             DB::commit(); // Confirma la transacción
             return ApiResponse::success($user, $message);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             DB::rollBack(); // Revertir cambios si hay un error
 
             // Si el error es debido a la existencia de un director, muestra un mensaje más amigable
@@ -170,7 +195,7 @@ class UsersController extends Controller
             }
 
             // Para otros errores, mostramos un mensaje genérico
-            // Log::error($e->getMessage());
+            Log::error("ERROR ~ UserController ~ createOrUpdate: $e->getMessage()");
             return ApiResponse::error('El usuario no se pudo crear. Intenta nuevamente.', 500);
         }
     }
@@ -270,7 +295,7 @@ class UsersController extends Controller
 
 
 
-    
+
 
     public function logout(Request $request)
     {

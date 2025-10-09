@@ -29,7 +29,7 @@ class User extends Authenticatable
         'Rol',
         'Password',
         'Activo',
-        
+
     ];
     /**
      * The attributes that should be hidden for serialization.
@@ -51,6 +51,19 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         // 'Password' => 'hashed',
     ];
+
+    // App\Models\User.php
+    public function departamentos()
+    {
+        return $this->belongsToMany(
+            RelUsuarioDepartamento::class,
+            'relusuariodepartamento',
+            'IDUsuario',
+            'IDDepartamento'
+        );
+    }
+
+
     protected static function boot()
     {
         parent::boot();

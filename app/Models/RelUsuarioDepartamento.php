@@ -10,6 +10,11 @@ class RelUsuarioDepartamento extends Model
     use HasFactory;
     protected $primaryKey = 'IdRelUsuarioDepartamento';
     protected $table = 'relusuariodepartamento';
+    protected $fillable = [
+        'IDUsuario',
+        'IDDepartamento'
+
+    ];
     public $timestamps = false;
 
     // esta tabla es una tabla relacion muchos a muchos entre la tabla cat_usuarios y cat_departametnos
