@@ -72,40 +72,79 @@ class   RequisicionesController extends Controller
             $datos = $request->all();
 
             // --- Procesar los productos ---
-            if ($request->has('Productos') && is_array($request->Productos)) {
-                foreach ($request->Productos as $producto) {
-                    $cantidad = $producto['Cantidad'] ?? null;
-                    $descripcion = $producto['Descripcion'] ?? null;
-                    $idDetalle = $producto['IDDetalle'] ?? null;
+            $productos = [];
 
-                    if ($update && !empty($idDetalle)) {
-                        if (!$cantidad || !$descripcion) {
-                            // --- Borrar producto si tiene IDDetalle pero ahora está vacío ---
-                            $detailsRequisitionController->delete($idDetalle);
-                            continue;
-                        } else {
-                            $detailsRequisitionController->update($idDetalle, $cantidad, $descripcion);
-                            continue;
+            // Manejar ambos formatos
+            if (isset($datos['Productos']) && is_array($datos['Productos'])) {
+                // Caso JSON
+                $productos = $datos['Productos'];
+            } else {
+                // Procesar formato form-data
+                foreach ($datos as $key => $value) {
+                    if (preg_match('/^Productos\[(\d+)\]\[(\w+)\]$/', $key, $matches)) {
+                        $index = $matches[1];
+                        $field = $matches[2];
+                        if (!isset($productos[$index])) {
+                            $productos[$index] = [];
                         }
+                        $productos[$index][$field] = $value;
                     }
+                }
+                ksort($productos);
+            }
 
-                    // Si es creación o no tiene IDDetalle y tiene datos
-                    if ($cantidad && $descripcion) {
-                        $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $descripcion);
+            // 🔥 CORRECCIÓN: Procesar archivos de imagen correctamente
+            foreach ($request->allFiles() as $key => $file) {
+                if (preg_match('/^Productos\[(\d+)\]\[image\]$/', $key, $matches)) {
+                    $index = $matches[1];
+                    if (!isset($productos[$index])) {
+                        $productos[$index] = [];
+                    }
+                    $productos[$index]['image'] = $file;
+                }
+            }
+
+            // 🔥 CORRECCIÓN ADICIONAL: También procesar cuando las imágenes vienen en el array de Productos
+            if (isset($datos['Productos']) && is_array($datos['Productos'])) {
+                foreach ($datos['Productos'] as $index => $producto) {
+                    if (isset($producto['image']) && $producto['image'] instanceof \Illuminate\Http\UploadedFile) {
+                        if (!isset($productos[$index])) {
+                            $productos[$index] = [];
+                        }
+                        $productos[$index]['image'] = $producto['image'];
                     }
                 }
             }
 
+            foreach ($productos as $index => $producto) {
+                $cantidad = trim($producto['Cantidad'] ?? '');
+                $descripcion = trim($producto['Descripcion'] ?? '');
+                $idDetalle = $producto['IDDetalle'] ?? null;
+                $imagen = $producto['image'] ?? null;
 
+                // Debug para ver qué se está procesando
+               
+                // Solo procesar si tiene datos válidos
+                $hasData = !empty($cantidad) && !empty($descripcion);
+                $hasId = !empty($idDetalle);
 
+                if ($update && $hasId) {
+                    if ($hasData) {
+                        $detailsRequisitionController->update($idDetalle, $cantidad, $descripcion, $imagen);
+                    } else {
+                        $detailsRequisitionController->delete($idDetalle);
+                    }
+                } elseif ($hasData) {
+                    $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $descripcion, $imagen);
+                }
+            }
 
-            DB::commit(); // Confirma la transacción
+             DB::commit(); // Confirma la transacción
 
             return ApiResponse::success($requisicion, $message);
         } catch (Exception $e) {
-            DB::rollBack(); // Revertir cambios si hay un error
-
-            // Log::error($e->getMessage()); // Mejor usar Log::error() para registrar errores
+            DB::rollBack();
+            Log::error("Error en create requisicion: " . $e->getMessage());
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
