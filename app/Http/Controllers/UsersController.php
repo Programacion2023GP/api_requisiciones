@@ -115,10 +115,10 @@ class UsersController extends Controller
             }
             // Crear relaciones usuario-departamento
             // $relUsuarioDepartamentoController = new RelUsuarioDepartamentoController();
-            // $relUsuarioDepartamentoController->storeDepartamentos($user->IDUsuario, $request->IdsDepartamentos);}
+            // $relUsuarioDepartamentoController->storeDepartamentos($user->IDUsuario, $request->IDDepartamentos);}
             // 2️⃣ Eliminar relaciones que ya no estén seleccionadas
             RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)
-                ->whereNotIn('IDDepartamento', $request->IdsDepartamentos)
+                ->whereNotIn('IDDepartamento', $request->IDDepartamentos)
                 ->delete();
 
             // 3️⃣ Insertar los nuevos (solo los que no existan)
@@ -126,7 +126,7 @@ class UsersController extends Controller
                 ->pluck('IDDepartamento')
                 ->toArray();
 
-            $nuevos = collect($request->IdsDepartamentos)
+            $nuevos = collect($request->IDDepartamentos)
                 ->diff($existentes)
                 ->map(fn($idDep) => [
                     'IDUsuario' => $user->IDUsuario,
