@@ -56,7 +56,6 @@ class UsersController extends Controller
                         DB::raw('GROUP_CONCAT(relusuariodepartamento.IDDepartamento SEPARATOR ",") as IDDepartamentos')
 
 
-
                     )
                     ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
                     ->leftJoin('cat_departamentos', 'cat_departamentos.IDDepartamento', '=', 'cat_usuarios.IDDepartamento')
