@@ -32,7 +32,12 @@ class   RequisicionesController extends Controller
                 $requisicion = new Requisiciones();
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
-                $requisicion->Status = Auth::user()->Rol=="DIRECTOR"?"AU":"CP";
+                $requisicion->Status = Auth::user()->Rol == "DIRECTOR" ? "AU" : "CP";
+                if (Auth::user()->Rol == "DIRECTOR") {
+                    # code...
+            $requisicion->UsuarioAU = $request->Auth::user()->Usuario;
+
+                }
                 $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             } else {
                 $message = "Requisicion actualizada con exito";
@@ -43,6 +48,7 @@ class   RequisicionesController extends Controller
 
             $requisicion->Ejercicio = date('Y');
             //centro de costo
+            
             $requisicion->FechaCaptura = $request->FechaCaptura;
             $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
             $requisicion->FechaAsignacion = $request->FechaAsignacion;
@@ -123,7 +129,7 @@ class   RequisicionesController extends Controller
                 $imagen = $producto['image'] ?? null;
 
                 // Debug para ver qué se está procesando
-               
+
                 // Solo procesar si tiene datos válidos
                 $hasData = !empty($cantidad) && !empty($descripcion);
                 $hasId = !empty($idDetalle);
@@ -139,7 +145,7 @@ class   RequisicionesController extends Controller
                 }
             }
 
-             DB::commit(); // Confirma la transacción
+            DB::commit(); // Confirma la transacción
 
             return ApiResponse::success($requisicion, $message);
         } catch (Exception $e) {
