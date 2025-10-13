@@ -89,15 +89,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('/provedores')->group(function () {
         Route::get('/index', [ProvedoresController::class, 'index']);
         Route::post('/create', [ProvedoresController::class, 'create']);
+        Route::post('/destroy', [ProvedoresController::class, 'destroy']);
         Route::put('/update', [ProvedoresController::class, 'update']);
     });
     Route::prefix('/departaments')->group(function () {
         Route::get('/index', [DepartamentsController::class, 'index']);
         Route::get('/director/{id}', [DepartamentsController::class, 'director']);
 
+
         Route::put('/update', [DepartamentsController::class, 'update']);
 
         Route::post('/create', [DepartamentsController::class, 'create']);
+        Route::post('/changename', [DepartamentsController::class, 'updateNameDepartament']);
+
     });
 });
 Route::get('/hola', function () {

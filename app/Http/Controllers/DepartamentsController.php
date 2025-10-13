@@ -43,59 +43,45 @@ class DepartamentsController extends Controller
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
-    public function create(Request $request)
-    {
-        try {
-            // Crear una nueva instancia de Director
-            $director = new Director();
+public function create(Request $request)
+{
+    try {
+        $director = new Director();
 
-            // Asignar los valores del request al director
-            $director->IDDepartamento = $request->IDDepartamento;
+        $director->IDDepartamento = $request->IDDepartamento;
+        $director->Nombre_Director = $request->Nombre_Director; // <-- se obtiene del request
 
-            $directoresId = DB::table('relusuariodepartamento')->insertGetId([
-                "IDUsuario" => $request->IDUsuario,
-                "IDDepartamento" => $request->IDDepartamento,
-            ]);
+        $dirPath = "presidencia/firmas_directores";
 
-            $nameDirector = DB::table('cat_usuarios')
-                ->where("IDDepartamento", $request->IDDepartamento)->where("Rol", "DIRECTOR")
-                ->where("IDDepartamento", $request->IDDepartamento)->whereIn("Rol", ["DIRECTOR", "DIRECTORCOMPRAS"])
-                ->orderBy("cat_usuarios.IDUsuario", "desc")
-                ->first();
-            $director->Nombre_Director = $nameDirector->NombreCompleto;
-            $dirPath = "presidencia/firmas_directores";
-            // Procesar la imagen usando la función ImgUpload adaptada
-            if ($request->hasFile('Firma_Director') && $request->file('Firma_Director')->isValid()) {
-                $firma = $request->file('Firma_Director');
+        if ($request->hasFile('firma_Director') && $request->file('firma_Director')->isValid()) {
+            $firma = $request->file('firma_Director');
 
-                // Usar la función ImgUpload con los parámetros que espera el microservicio
-                $imagePath = $this->ImgUpload(
-                    $firma,
-                    $request->IDDepartamento, // destination
-                    $dirPath, // dir
-                    'firma_director_' . $request->IDDepartamento    // imgName
-                );
+            $imagePath = $this->ImgUpload(
+                $firma,
+                $request->IDDepartamento,
+                $dirPath,
+                'firma_director_' . $request->IDDepartamento
+            );
 
-                $director->Firma_Director = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->IDDepartamento . "/" . $imagePath;
-            } else {
-                throw new \Exception('La firma no es válida o no fue cargada correctamente.');
-            }
-
-            // Asignar los demás valores
-            $director->FechaInicio = now()->format('Y-m-d');
-            $director->FechaAlta = now();
-            $director->Usuario = Auth::user()->Usuario;
-            $director->Fum = now()->format('Y-m-d');
-            $director->UsuarioFum = Auth::user()->Usuario;
-
-            // Guardar el director en la base de datos
-            $director->save();
-
-            return ApiResponse::success($director, 'Director registrado exitosamente');
-        } catch (\Exception $e) {
-            return ApiResponse::error($e->getMessage(), 500);
+            $director->Firma_Director = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->IDDepartamento . "/" . $imagePath;
+        } else {
+            throw new \Exception('La firma no es válida o no fue cargada correctamente.');
         }
+
+        $director->FechaInicio = now()->format('Y-m-d');
+        $director->FechaAlta = now();
+        $director->Usuario = Auth::user()->Usuario;
+        $director->Fum = now()->format('Y-m-d');
+        $director->UsuarioFum = Auth::user()->Usuario;
+
+        $director->save();
+
+        return ApiResponse::success($director, 'Director registrado exitosamente');
+    } catch (\Exception $e) {
+        return ApiResponse::error($e->getMessage(), 500);
     }
+}
+
     /**
      * Función para guardar una imagen en el microservicio, elimina y guarda la nueva al editar la imagen
      * para no guardar muchas imágenes y genera el path que se guardará en la BD
@@ -161,6 +147,28 @@ class DepartamentsController extends Controller
             throw new \Exception($e->getMessage());
         }
     }
+ public function updateNameDepartament(Request $request)
+{
+    try {
+        // Actualizar el nombre del departamento
+        $departament = DB::table('cat_departamentos')
+            ->where('IDDepartamento', $request->IDDepartamento)
+            ->update([
+                'Nombre_Departamento' => $request->Nombre_Departamento,
+            ]);
+
+        // Si no se actualizó ninguna fila
+        if ($departament === 0) {
+            return ApiResponse::error('No se encontró el departamento o no hubo cambios.', 404);
+        }
+
+        // Responder con éxito
+        return ApiResponse::success($departament, 'Departamento actualizado exitosamente');
+    } catch (\Exception $e) {
+        // Manejo de errores
+        return ApiResponse::error($e->getMessage(), 500);
+    }
+}
 
 
 

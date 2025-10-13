@@ -46,21 +46,19 @@ class UsersController extends Controller
             } else {
                 $users = User::where('Activo', 1)
                     ->select(
-                        'cat_usuarios.*', // Selecciona todas las columnas de la tabla cat_usuarios
+                        'cat_usuarios.*',
                         'autorizadores.Permiso_Autorizar',
                         'autorizadores.Permiso_Asignar',
                         'autorizadores.Permiso_Cotizar',
                         'autorizadores.Permiso_Orden_Compra',
                         'autorizadores.Permiso_Surtir',
                         'cat_departamentos.Nombre_Departamento',
-                        DB::raw('GROUP_CONCAT(relusuariodepartamento.IDDepartamento SEPARATOR ",") as IDDepartamentos')
-
-
+                        DB::raw('(SELECT GROUP_CONCAT(IDDepartamento SEPARATOR ",")
+                  FROM relusuariodepartamento
+                  WHERE relusuariodepartamento.IDUsuario = cat_usuarios.IDUsuario) as IDDepartamentos')
                     )
                     ->leftJoin('autorizadores', 'autorizadores.Autorizador', '=', 'cat_usuarios.Usuario')
                     ->leftJoin('cat_departamentos', 'cat_departamentos.IDDepartamento', '=', 'cat_usuarios.IDDepartamento')
-                    ->leftJoin('relusuariodepartamento', 'relusuariodepartamento.IDUsuario', '=', 'cat_usuarios.IDUsuario')
-                    ->groupBy("IDUsuario")
                     ->orderBy('IDUsuario', 'desc')
                     ->get();
             }
@@ -136,6 +134,21 @@ class UsersController extends Controller
 
             if (count($nuevos)) {
                 RelUsuarioDepartamento::insert($nuevos);
+            }
+            if ($request->accept_Director) {
+                $firmaFile = $request->file('firma_Director'); // obtiene el archivo original
+
+                foreach ($request->IDDepartamentos as $idDep) {
+                    $newRequest = new Request([
+                        'IDDepartamento' => $idDep,
+                        'Nombre_Director' => $user->NombreCompleto,
+                    ]);
+
+                    // Adjuntar manualmente el archivo al nuevo request
+                    $newRequest->files->set('firma_Director', $firmaFile);
+
+                    (new DepartamentsController())->create($newRequest);
+                }
             }
 
             // Lógica de roles

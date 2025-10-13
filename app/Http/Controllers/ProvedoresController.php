@@ -33,8 +33,16 @@ class ProvedoresController extends Controller
             //     // Obtener las empresas de la respuesta de la API Node.js
             //     $empresas = $response->json();
 
-            $proveedores = Provedor::orderBy('NombreCompleto', 'desc')->get();
-
+$proveedores = Provedor::orderBy('NombreCompleto', 'desc')
+    ->where("Activo", 1)
+    ->get()
+    ->map(function ($proveedor) {
+        $proveedor->DeRelleno = $proveedor->DeRelleno == 1;
+        if ($proveedor->DeRelleno) {
+            $proveedor->NombreCompleto = '🚩 ' . $proveedor->NombreCompleto;
+        }
+        return $proveedor;
+    });
             // $empresasConRfcCoincidente = [];
 
             // foreach ($proveedores as $proveedor) {
@@ -117,7 +125,8 @@ class ProvedoresController extends Controller
                 'RFC',
                 'Telefono1',
                 'Telefono2',
-                'EMail'
+                'EMail',
+                "DeRelleno"
             ]));
 
             $proveedor->FechaAlta = now();
@@ -134,6 +143,31 @@ class ProvedoresController extends Controller
             }
 
             return ApiResponse::error('El provedor no se pudo crear. Intenta nuevamente.', 400);
+        }
+    }
+       public function destroy(Request $request)
+    {
+        try {
+            $proveedor = Provedor::where('IDProveedor', $request->IDProveedor)->first();
+              
+
+            if (!$proveedor) {
+                return ApiResponse::error('Proveedor no encontrado', 404);
+            }
+
+          
+
+            $proveedor->Activo = 0;
+
+            $proveedor->save();
+
+            return ApiResponse::success($proveedor, 'Proveedor desactivado');
+        } catch (Exception $e) {
+            if ($e->getMessage() == 'Proveedor no encontrado') {
+                return ApiResponse::error('Proveedor no encontrado.', 400);
+            }
+
+            return ApiResponse::error('El provedor no se desactivar.', 400);
         }
     }
 }
