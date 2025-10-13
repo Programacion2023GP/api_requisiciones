@@ -32,7 +32,7 @@ class   RequisicionesController extends Controller
                 $requisicion = new Requisiciones();
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
-                $requisicion->Status = "CP";
+                $requisicion->Status = Auth::user()->Rol=="DIRECTOR"?"AU":"CP";
                 $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             } else {
                 $message = "Requisicion actualizada con exito";
