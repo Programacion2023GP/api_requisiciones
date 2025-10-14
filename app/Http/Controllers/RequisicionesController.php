@@ -35,7 +35,7 @@ class   RequisicionesController extends Controller
                 $requisicion->Status = Auth::user()->Rol == "DIRECTOR" ? "AU" : "CP";
                 if (Auth::user()->Rol == "DIRECTOR") {
                     # code...
-            $requisicion->UsuarioAU = $request->Auth::user()->Usuario;
+            $requisicion->UsuarioAU = Auth::user()->Usuario;
 
                 }
                 $requisicion->UsuarioCaptura = Auth::user()->Usuario;
