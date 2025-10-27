@@ -35,8 +35,8 @@ class   RequisicionesController extends Controller
                 $requisicion->Status = Auth::user()->Rol == "DIRECTOR" ? "AU" : "CP";
                 if (Auth::user()->Rol == "DIRECTOR") {
                     # code...
-            $requisicion->UsuarioAU = Auth::user()->Usuario;
-
+                    $requisicion->UsuarioAU = Auth::user()->Usuario;
+                    $requisicion->FechaAutorizacion = date('Y-m-d H:i:s');
                 }
                 $requisicion->UsuarioCaptura = Auth::user()->Usuario;
             } else {
@@ -48,7 +48,7 @@ class   RequisicionesController extends Controller
 
             $requisicion->Ejercicio = date('Y');
             //centro de costo
-            
+
             $requisicion->FechaCaptura = $request->FechaCaptura;
             $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
             $requisicion->FechaAsignacion = $request->FechaAsignacion;
@@ -58,7 +58,7 @@ class   RequisicionesController extends Controller
             // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
             $requisicion->FUM = date('Y-m-d H:i:s');
 
-            $requisicion->UsuarioCa = Auth::user()->Usuario;
+            // $requisicion->UsuarioCa = Auth::user()->Usuario;
             $requisicion->IDDepartamento = Auth::user()->Rol == "CAPTURA" ? Auth::user()->IDDepartamento :  $request->IDDepartamento;
             $requisicion->Solicitante = $request->Solicitante;
             $requisicion->Observaciones = $request->Observaciones;
@@ -407,7 +407,7 @@ class   RequisicionesController extends Controller
             // Actualizar la requisición según el estado
             switch ($request->status) {
                 case "CP":
-                    $requisicion->FechaCaptura = null;
+                    // $requisicion->FechaCaptura = null;
                     $requisicion->FechaAutorizacion = null;
                     $requisicion->FechaAsignacion = null;
                     $requisicion->FechaCotizacion = null;
@@ -427,7 +427,7 @@ class   RequisicionesController extends Controller
                     $requisicion->Status = $request->status;
 
                 case "AU":
-                    $requisicion->FechaAutorizacion = null;
+                    // $requisicion->FechaAutorizacion = null;
 
                     $requisicion->FechaAsignacion = null;
                     $requisicion->FechaCotizacion = null;
@@ -435,7 +435,7 @@ class   RequisicionesController extends Controller
                     $requisicion->FechaCancelacion = null;
                     $requisicion->FechaVoBo = null;
 
-                    $requisicion->UsuarioAU = null;
+                    // $requisicion->UsuarioAU = null;
                     $requisicion->UsuarioAS = null;
                     $requisicion->UsuarioCO = null;
                     $requisicion->UsuarioOC = null;
@@ -457,7 +457,7 @@ class   RequisicionesController extends Controller
                     $requisicion->UsuarioVoBo = null;
                     break;
                 case "AS":
-                    $requisicion->UsuarioAS = null;
+                    // $requisicion->UsuarioAS = null;
                     $requisicion->FechaVoBo = null;
                     $requisicion->FechaCotizacion = null;
                     $requisicion->FechaOrdenCompra = null;
@@ -471,19 +471,19 @@ class   RequisicionesController extends Controller
                     $requisicion->UsuarioVoBo = null;
                     break;
                 case "CO":
-                    $requisicion->FechaCotizacion = null;
+                    // $requisicion->FechaCotizacion = null;
                     $requisicion->FechaOrdenCompra = null;
                     $requisicion->FechaCancelacion = null;
                     $requisicion->Status = $request->status;
-                    $requisicion->UsuarioCO = null;
+                    // $requisicion->UsuarioCO = null;
                     $requisicion->UsuarioOC = null;
                     $requisicion->UsuarioCA = null;
                     break;
                 case "OC":
-                    $requisicion->FechaOrdenCompra = null;
+                    // $requisicion->FechaOrdenCompra = null;
                     $requisicion->FechaCancelacion = null;
                     $requisicion->Status = $request->status;
-                    $requisicion->UsuarioOC = null;
+                    // $requisicion->UsuarioOC = null;
                     $requisicion->UsuarioCA = null;
                     break;
                 case "SU":
@@ -497,6 +497,8 @@ class   RequisicionesController extends Controller
 
                     break;
                 case "CA":
+                    $requisicion->FechaCancelacion = now();
+                    $requisicion->UsuarioCA = Auth::user()->Usuario;
                     $requisicion->Status = $request->status;
                     break;
                 default:
