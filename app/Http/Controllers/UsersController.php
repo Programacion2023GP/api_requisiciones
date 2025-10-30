@@ -135,7 +135,7 @@ class UsersController extends Controller
             if (count($nuevos)) {
                 RelUsuarioDepartamento::insert($nuevos);
             }
-            if ($request->accept_Director) {
+            if ($request->accept_Director && $request->hasFile('firma_Director')) {
                 $firmaFile = $request->file('firma_Director'); // obtiene el archivo original
 
                 foreach ($request->IDDepartamentos as $idDep) {
@@ -171,6 +171,7 @@ class UsersController extends Controller
                 ]), $user->Usuario);
             } else if ($request->Rol === 'CAPTURA') {
                 (new MenuUserController())->create(new Request(["Listado" => 1, "RequisicionesAdd"   => 1]), $user->Usuario);
+                (new AutorizadoresController())->create($request);
             } elseif ($request->Rol === 'REQUISITOR') {
                 (new RequisitorController())->create($request);
                 (new AutorizadoresController())->create($request);
