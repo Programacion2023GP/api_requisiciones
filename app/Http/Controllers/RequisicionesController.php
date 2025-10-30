@@ -26,7 +26,7 @@ class   RequisicionesController extends Controller
         try {
             $requisicion = Requisiciones::find($request->IDRequisicion);
             $detailsRequisitionController = new DetailsRequisitionController();
-            $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
+            if ($request->FechaAutorizacion) $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
 
             if (!$requisicion) {
                 // Actualizar usuario   
