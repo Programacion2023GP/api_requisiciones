@@ -225,7 +225,7 @@ class UsersController extends Controller
             $user = User::where('Usuario', $credentials['Usuario'])->first();
             $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
             $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
-            $continue = Departamento::whereIn("IDDepartamento", [84, 47, 21, 64])
+            $continue = Departamento::whereIn("IDDepartamento", [82,84, 47, 21, 64])
                 ->where("IDDepartamento", $user->IDDepartamento)
                 ->first();
             $departamentosUser = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)->pluck('IDDepartamento')->toArray();
