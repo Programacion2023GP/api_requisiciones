@@ -225,7 +225,7 @@ class UsersController extends Controller
             $user = User::where('Usuario', $credentials['Usuario'])->first();
             $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
             $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
-            $continue = Departamento::whereIn("IDDepartamento", [84, 47, 21, 64, 83])
+            $continue = Departamento::whereIn("IDDepartamento", [84, 47, 21, 64])
                 ->where("IDDepartamento", $user->IDDepartamento)
                 ->first();
             $departamentosUser = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)->pluck('IDDepartamento')->toArray();
@@ -287,16 +287,19 @@ class UsersController extends Controller
                         }
                     }
                 }
+                // return $user->Rol;
+                $canAccess = $user->Rol == "SISTEMAS" || $continue;
+                
                 return ApiResponse::success([
                     "permisos" => $permisos,
                     "menuPermiso" => $menuPermisos,
                     "token" => $token,
                     "group" => $departamentosUser,
                     "role" => $user->Rol,
-                    "redirect" => $continue?   "/#/" . $route:  "/#/" ."access-denied",
+                    "redirect" => $canAccess ? "/#/" . $route : "/#/access-denied",
                     "centro_costo" => $departamento->Centro_Costo,
                     "name" => $user->NombreCompleto,
-                    "continue"=> $continue,
+                    "continue" => $canAccess,
                 ], 'Bienvenido al sistema');
             }
 
