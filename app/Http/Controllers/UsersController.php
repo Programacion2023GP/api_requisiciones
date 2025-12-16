@@ -225,7 +225,7 @@ class UsersController extends Controller
             $user = User::where('Usuario', $credentials['Usuario'])->first();
             $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
             $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
-            $continue = Departamento::whereIn("IDDepartamento", [20, 64, 82, 84, 19, 27, 28, 96, 103,35, 83,23])
+            $continue = Departamento::whereIn("IDDepartamento", [20, 64, 82, 84, 19, 27, 28, 96, 103,35, 83,23, 73])
                 ->where("IDDepartamento", $user->IDDepartamento)
                 ->first();
             // return $continue;
@@ -257,7 +257,6 @@ class UsersController extends Controller
                 // Orden de prioridad con la clave como el menú original y el valor como el menú relacionado
 
                 if ($route == "") {
-                    # code...
                     foreach ($menuPermisos as $mP) {
                         if ((trim($mP->IdMenu) == "Listado") && $mP->EstadoPermiso == 1) {
                             $route = "MnuRequisiciones";
