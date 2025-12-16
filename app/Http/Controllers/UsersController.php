@@ -228,6 +228,7 @@ class UsersController extends Controller
             $continue = Departamento::whereIn("IDDepartamento", [20, 64, 82, 84,19,27,28])
                 ->where("IDDepartamento", $user->IDDepartamento)
                 ->first();
+                // return $continue;
             $departamentosUser = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)->pluck('IDDepartamento')->toArray();
             if ($user && $user->Password === $credentials['Password']) {
                 $token = $user->createToken('YourAppName')->plainTextToken;
