@@ -24,7 +24,7 @@ class   RequisicionesController extends Controller
         $message = "Requisicion creada con exito";
         $update = false;
         try {
-            $requisicion = Requisiciones::find($request->IDRequisicion);
+            $requisicion = Requisiciones::find($request->Id);
             $detailsRequisitionController = new DetailsRequisitionController();
             if ($request->FechaAutorizacion) $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
 
