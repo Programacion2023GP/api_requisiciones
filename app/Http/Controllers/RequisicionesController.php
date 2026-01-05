@@ -27,7 +27,6 @@ class   RequisicionesController extends Controller
             $requisicion = Requisiciones::find($request->Id);
             $detailsRequisitionController = new DetailsRequisitionController();
             if ($request->FechaAutorizacion) $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
-
             if (!$requisicion) {
                 // Actualizar usuario   
                 $requisicion = new Requisiciones();
@@ -158,7 +157,7 @@ class   RequisicionesController extends Controller
     {
         try {
             //code...
-            $requisicion = Requisiciones::where("IDRequisicion", $request->id)->first(); // Cambiar get() por first()
+            $requisicion = Requisiciones::where("Id", $request->id)->first(); // Cambiar get() por first()
             if (!$requisicion) {
                 return ApiResponse::error("Requisición no encontrada", 404);
             } else {
@@ -169,7 +168,6 @@ class   RequisicionesController extends Controller
 
                 // Actualizar el registro
                 $requisicion->save(); // Usar save() en lugar de update()
-                return $requisicion;
                 return ApiResponse::success($requisicion, 'Requisición asignada con éxito');
             }
         } catch (Exception $e) {
