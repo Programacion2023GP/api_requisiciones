@@ -556,7 +556,7 @@ class   RequisicionesController extends Controller
         try {
             $requisicion = Requisiciones::join('det_requisicion', function ($join) {
                 $join->on('det_requisicion.Ejercicio', '=', 'requisiciones.Ejercicio')
-                    ->on('det_requisicion.IDRequisicion', '=', 'requisiciones.IDRequisicion');
+                    ->on('det_requisicion.IDRequisicion', '=', 'requisiciones.Id');
             })->where('requisiciones.Id', $request->Id)
                 ->get();
             return ApiResponse::success($requisicion, 'Requisición obtenida con éxito');
@@ -677,14 +677,13 @@ class   RequisicionesController extends Controller
             $products = DB::table('det_requisicion as d')
                 ->leftJoin('requisiciones as r', function ($join) {
                     $join->on('r.Ejercicio', '=', 'd.Ejercicio')
-                        ->on('r.IDRequisicion', '=', 'd.IDRequisicion');
+                        ->on('r.Id', '=', 'd.IDRequisicion');
                 })
                 ->select(
                     'd.*',
                     'r.ObservacionesCot'
                 )
 
-                ->where('d.Ejercicio', $request->Ejercicio)
                 ->where('d.IDRequisicion', $request->IDRequisicion)
                 ->orderBy('d.IDDetalle', 'desc') // Orden descendente por IDDetalle
                 ->get();
