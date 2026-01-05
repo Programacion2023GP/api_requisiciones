@@ -140,7 +140,7 @@ class   RequisicionesController extends Controller
                         $detailsRequisitionController->delete($idDetalle);
                     }
                 } elseif ($hasData) {
-                    $detailsRequisitionController->create($requisicion->IDRequisicion, $cantidad, $descripcion, $imagen);
+                    $detailsRequisitionController->create($requisicion->Id, $cantidad, $descripcion, $imagen);
                 }
             }
 
