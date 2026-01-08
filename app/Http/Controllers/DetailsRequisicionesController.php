@@ -61,8 +61,7 @@ class DetailsRequisicionesController extends Controller
             }
 
             // Actualizar observaciones si CO
-            $requisicion = Requisiciones::where('IDRequisicion', $request->IDRequisicion)
-                ->where('Ejercicio', $request->Ejercicio)
+            $requisicion = Requisiciones::where('Id', $request->IDRequisicion)
                 ->first();
             if ($requisicion) {
                 $requisicion->ObservacionesCot = $request->ObservacionesCot;
