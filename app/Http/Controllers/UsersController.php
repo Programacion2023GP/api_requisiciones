@@ -13,6 +13,7 @@ use App\Models\Departamento;
 use App\Models\Director;
 use App\Models\RelUsuarioDepartamento;
 use ErrorException;
+use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -92,13 +93,16 @@ class UsersController extends Controller
         DB::beginTransaction(); // Inicia la transacción
 
         try {
+            // 1. Validar que IDDepartamentos existe y es array
+            if (!$request->has('IDDepartamentos') || !is_array($request->IDDepartamentos)) {
+                throw new Exception('IDDepartamentos es requerido y debe ser un array');
+            }
 
             $user = User::find($request->IDUsuario);
+
             if ($user) {
                 // Actualizar usuario
-
                 $user->update($request->all());
-
                 $message = 'Usuario actualizado con éxito';
             } else {
                 $exists = User::where('Usuario', $request->Usuario)->exists();
@@ -106,20 +110,17 @@ class UsersController extends Controller
                 if ($exists) {
                     throw new Exception('El usuario ya existe');
                 }
+
                 // Crear usuario
                 $user = User::create($request->all());
-
                 $message = 'Usuario creado con éxito';
             }
-            // Crear relaciones usuario-departamento
-            // $relUsuarioDepartamentoController = new RelUsuarioDepartamentoController();
-            // $relUsuarioDepartamentoController->storeDepartamentos($user->IDUsuario, $request->IDDepartamentos);}
-            // 2️⃣ Eliminar relaciones que ya no estén seleccionadas
+
+            // 2. Crear relaciones usuario-departamento
             RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)
                 ->whereNotIn('IDDepartamento', $request->IDDepartamentos)
                 ->delete();
 
-            // 3️⃣ Insertar los nuevos (solo los que no existan)
             $existentes = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)
                 ->pluck('IDDepartamento')
                 ->toArray();
@@ -135,63 +136,175 @@ class UsersController extends Controller
             if (count($nuevos)) {
                 RelUsuarioDepartamento::insert($nuevos);
             }
-            if ($request->accept_Director && $request->hasFile('firma_Director')) {
-                $firmaFile = $request->file('firma_Director'); // obtiene el archivo original
 
-                foreach ($request->IDDepartamentos as $idDep) {
-                    $newRequest = new Request([
-                        'IDDepartamento' => $idDep,
-                        'Nombre_Director' => $user->NombreCompleto,
-                    ]);
+            // 3. Manejo de firma del director (corregido)
+            if ($request->hasFile('firma_Director')) {
+                \Log::info('=== INICIO PROCESAMIENTO FIRMA DIRECTOR ===');
 
-                    // Adjuntar manualmente el archivo al nuevo request
-                    $newRequest->files->set('firma_Director', $firmaFile);
+                $firmaFile = $request->file('firma_Director');
 
-                    (new DepartamentsController())->create($newRequest);
+                // DEBUG del archivo recibido
+                \Log::info('Archivo recibido:');
+                \Log::info('  - Nombre: ' . $firmaFile->getClientOriginalName());
+                \Log::info('  - Tamaño: ' . $firmaFile->getSize());
+                \Log::info('  - MIME: ' . $firmaFile->getClientMimeType());
+                \Log::info('  - Extensión: ' . $firmaFile->getClientOriginalExtension());
+                \Log::info('  - ¿Válido?: ' . ($firmaFile->isValid() ? 'Sí' : 'No'));
+
+                if (!$firmaFile->isValid()) {
+                    \Log::error('Archivo no válido. Error: ' . $firmaFile->getErrorMessage());
+                    throw new Exception('El archivo de firma no es válido: ' . $firmaFile->getErrorMessage());
                 }
+
+                // Obtener contenido del archivo UNA VEZ
+                \Log::info('Obteniendo contenido del archivo...');
+                $fileContent = file_get_contents($firmaFile->getRealPath());
+                $originalName = $firmaFile->getClientOriginalName();
+                $mimeType = $firmaFile->getClientMimeType();
+
+                \Log::info('Contenido obtenido: ' . strlen($fileContent) . ' bytes');
+
+                // DEBUG de departamentos
+                \Log::info('IDDepartamentos a procesar: ' . json_encode($request->IDDepartamentos));
+                \Log::info('Nombre_Director: ' . ($user->NombreCompleto ?? 'NULL'));
+                \Log::info('Total departamentos: ' . count($request->IDDepartamentos));
+
+                foreach ($request->IDDepartamentos as $index => $idDep) {
+                    \Log::info("--- Procesando departamento #" . ($index + 1) . " (ID: {$idDep}) ---");
+
+                    try {
+                        // Crear archivo temporal para CADA departamento
+                        $tempPath = tempnam(sys_get_temp_dir(), 'firma_');
+                        \Log::info('Ruta temporal creada: ' . $tempPath);
+
+                        if ($tempPath === false) {
+                            \Log::error('No se pudo crear archivo temporal');
+                            throw new Exception('No se pudo crear archivo temporal');
+                        }
+
+                        // Escribir contenido en archivo temporal
+                        \Log::info('Escribiendo contenido en archivo temporal...');
+                        $bytesWritten = file_put_contents($tempPath, $fileContent);
+
+                        if ($bytesWritten === false) {
+                            \Log::error('No se pudo escribir en archivo temporal');
+                            @unlink($tempPath);
+                            throw new Exception('No se pudo escribir en archivo temporal');
+                        }
+
+                        \Log::info('Bytes escritos: ' . $bytesWritten);
+                        \Log::info('¿Archivo temporal existe?: ' . (file_exists($tempPath) ? 'Sí' : 'No'));
+                        \Log::info('Tamaño archivo temporal: ' . (file_exists($tempPath) ? filesize($tempPath) . ' bytes' : 'No existe'));
+
+                        // Crear nuevo UploadedFile para cada departamento
+                        \Log::info('Creando UploadedFile...');
+                        $firmaCopy = new \Illuminate\Http\UploadedFile(
+                            $tempPath,
+                            $originalName,
+                            $mimeType,
+                            null,
+                            true // test = true (no mueve el archivo)
+                        );
+
+                        \Log::info('UploadedFile creado:');
+                        \Log::info('  - Nombre: ' . $firmaCopy->getClientOriginalName());
+                        \Log::info('  - Tamaño: ' . $firmaCopy->getSize());
+                        \Log::info('  - ¿Válido?: ' . ($firmaCopy->isValid() ? 'Sí' : 'No'));
+
+                        $newRequest = new Request([
+                            'IDDepartamento' => $idDep,
+                            'Nombre_Director' =>         $user->Nombre . ' ' . $user->Paterno . ' ' . $user->Materno  
+,
+                        ]);
+
+                        \Log::info('Nuevo Request creado:');
+                        \Log::info('  - IDDepartamento: ' . $idDep);
+                        \Log::info('  - Nombre_Director: ' . ($user->NombreCompleto ?? 'NULL'));
+
+                        $newRequest->files->set('firma_Director', $firmaCopy);
+
+                        // Verificar que el archivo se adjuntó
+                        if ($newRequest->hasFile('firma_Director')) {
+                            \Log::info('✅ Archivo adjuntado correctamente al request');
+                        } else {
+                            \Log::error('❌ Archivo NO se adjuntó al request');
+                        }
+
+                        \Log::info('Llamando a DepartamentsController::create()...');
+
+                        try {
+                            $result = (new DepartamentsController())->create($newRequest);
+                            \Log::info('✅ DepartamentsController::create() ejecutado exitosamente');
+
+                            // Si devuelve una respuesta JSON, podemos verla
+                            if ($result instanceof \Illuminate\Http\JsonResponse) {
+                                $responseData = $result->getData();
+                                \Log::info('Respuesta del controller:', (array)$responseData);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('❌ ERROR en DepartamentsController::create(): ' . $e->getMessage());
+                            \Log::error('Trace: ' . $e->getTraceAsString());
+                            @unlink($tempPath);
+                            throw new Exception("Error al procesar departamento {$idDep}: " . $e->getMessage());
+                        }
+
+                        // Limpiar archivo temporal
+                        \Log::info('Eliminando archivo temporal...');
+                        if (file_exists($tempPath)) {
+                            $deleted = @unlink($tempPath);
+                            \Log::info('Archivo temporal eliminado: ' . ($deleted ? 'Sí' : 'No'));
+                        }
+
+                        \Log::info("✅ Departamento {$idDep} procesado correctamente");
+                    } catch (\Exception $e) {
+                        \Log::error("❌ ERROR en departamento {$idDep}: " . $e->getMessage());
+                        throw $e;
+                    }
+                }
+
+                \Log::info('=== FIN PROCESAMIENTO FIRMA DIRECTOR ===');
+            }
+            // 4. Lógica de roles con manejo de booleanos
+            if (in_array($request->Rol, ['AUTORIZADOR', 'DIRECTORCOMPRAS', 'CAPTURA', 'REQUISITOR', 'DIRECTOR'])) {
+                // Convertir valores booleanos antes de enviar al controller
+                $this->procesarAutorizador($request, $user);
             }
 
-            // Lógica de roles
-            if ($request->Rol === 'AUTORIZADOR') {
-                (new AutorizadoresController())->create($request);
-                (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
-            } else if ($request->Rol === 'DIRECTORCOMPRAS') {
-                (new AutorizadoresController())->create($request);
-                (new MenuUserController())->create(new Request([
-                    // "CatDepartamentos"   => 1,
-                    // "CatProveedores"     => 1,
-                    "Listado"            => 1,
-                    "ReporteConsumibles" => 1,
-                    "RequisicionesAdd"   => 1,
-                    "SeguimientoRequis"  => 1,
-                    "Soporte"            => 1,
-                    // "VoBo"               => 1,
-                    // "Permisos"           => 1,
-                    // "Usuarios"           => 1,
-                ]), $user->Usuario);
-            } else if ($request->Rol === 'CAPTURA') {
-                (new MenuUserController())->create(new Request(["Listado" => 1, "RequisicionesAdd"   => 1]), $user->Usuario);
-                (new AutorizadoresController())->create($request);
-            } elseif ($request->Rol === 'REQUISITOR') {
-                (new RequisitorController())->create($request);
-                (new AutorizadoresController())->create($request);
-                (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
-            } elseif ($request->Rol === 'DIRECTOR') {
-                (new MenuUserController())->create(new Request([
+            // 5. Otros roles específicos
+            switch ($request->Rol) {
+                case 'AUTORIZADOR':
+                    (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
+                    break;
 
-                    "Listado"            => 1,
-                    "RequisicionesAdd"   => 1,
-                    "SeguimientoRequis"  => 1,
-                    "Soporte"            => 1,
+                case 'DIRECTORCOMPRAS':
+                    (new MenuUserController())->create(new Request([
+                        "Listado" => 1,
+                        "ReporteConsumibles" => 1,
+                        "RequisicionesAdd" => 1,
+                        "SeguimientoRequis" => 1,
+                        "Soporte" => 1,
+                    ]), $user->Usuario);
+                    break;
 
-                ]), $user->Usuario);
-                // $exists = Director::where('IdDepartamento', $request->IDDepartamento)->exists();
+                case 'CAPTURA':
+                    (new MenuUserController())->create(new Request(["Listado" => 1, "RequisicionesAdd" => 1]), $user->Usuario);
+                    break;
 
-                // if ($exists) {
-                //     throw new Exception('Ya existe el director');
-                // }
-                (new DirectorController())->create($request);
-                (new AutorizadoresController())->create($request);
+                case 'REQUISITOR':
+                    (new RequisitorController())->create($request);
+                    (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
+                    break;
+
+                case 'DIRECTOR':
+                    (new MenuUserController())->create(new Request([
+                        "Listado" => 1,
+                        "RequisicionesAdd" => 1,
+                        "SeguimientoRequis" => 1,
+                        "Soporte" => 1,
+                    ]), $user->Usuario);
+
+                    (new DirectorController())->create($request);
+                    break;
             }
 
             DB::commit(); // Confirma la transacción
@@ -199,18 +312,79 @@ class UsersController extends Controller
         } catch (\Exception $e) {
             DB::rollBack(); // Revertir cambios si hay un error
 
-            // Si el error es debido a la existencia de un director, muestra un mensaje más amigable
-            if ($e->getMessage() == 'El usuario ya existe') {
-                return ApiResponse::error('El usuario ya existe.', 500);
-            }
-            if ($e->getMessage() == 'Ya existe el director') {
-                return ApiResponse::error('No se puede crear el director, ya existe uno registrado.', 500);
-            }
+            // Log detallado del error
+            \Log::error('ERROR en UserController::createOrUpdate: ' . $e->getMessage());
+            \Log::error('Trace: ' . $e->getTraceAsString());
+            \Log::error('Request data: ', $request->all());
 
-            // Para otros errores, mostramos un mensaje genérico
-            Log::error("ERROR ~ UserController ~ createOrUpdate: $e->getMessage()");
-            return ApiResponse::error('El usuario no se pudo crear. Intenta nuevamente.', 500);
+            // Mensajes específicos
+            $errorMessages = [
+                'El usuario ya existe' => 'El usuario ya existe.',
+                'Ya existe el director' => 'No se puede crear el director, ya existe uno registrado.',
+                'El archivo de firma no es válido' => 'El archivo de firma no es válido o está corrupto.',
+            ];
+
+            $message = $errorMessages[$e->getMessage()] ??
+                'Error al procesar la solicitud: ' . $e->getMessage();
+
+            return ApiResponse::error($message, 500);
         }
+    }
+
+    /**
+     * Método auxiliar para procesar autorizador con conversión de booleanos
+     */
+    private function procesarAutorizador(Request $request, User $user)
+    {
+        // DEBUG: Ver qué viene en el request
+       
+
+        // Crear array de datos para autorizador
+        $data = [
+            'Autorizador' => $request->Usuario,
+        ];
+
+
+        // Campos booleanos que necesitan conversión
+        $booleanFields = [
+            'Permiso_Autorizar',
+            'Permiso_Asignar',
+            'Permiso_Cotizar',
+            'Permiso_Orden_Compra',
+            'Permiso_Surtir'
+        ];
+
+        foreach ($booleanFields as $field) {
+            if ($request->has($field)) {
+                $value = $request->get($field);
+
+                // Convertir string 'true'/'false' a booleano
+                if (is_string($value)) {
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                }
+
+                // Convertir a 1/0 para MySQL
+                $data[$field] = $value ? 1 : 0;
+            } else {
+                // Valor por defecto
+                $data[$field] = 0;
+            }
+        }
+
+
+        // VALIDACIÓN CRÍTICA: Asegurar que Autorizador no sea null
+        if (empty($data['Autorizador'])) {
+           
+
+            // Intentar obtener el valor de otra forma
+            $data['Autorizador'] = $user->Usuario ?? $user->email ?? 'user_' . $user->id . '_' . time();
+        }
+
+        // Crear nuevo Request con datos convertidos
+        $autorizadorRequest = new Request($data);
+
+
+        (new AutorizadoresController())->create($autorizadorRequest);
     }
     public function login(Request $request)
     {

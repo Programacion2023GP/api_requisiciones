@@ -43,44 +43,139 @@ class DepartamentsController extends Controller
             return ApiResponse::error($e->getMessage(), 500);
         }
     }
-public function create(Request $request)
-{
-    try {
-        $director = new Director();
+    public function create(Request $request)
+    {
+        DB::beginTransaction();
 
-        $director->IDDepartamento = $request->IDDepartamento;
-        $director->Nombre_Director = $request->Nombre_Director; // <-- se obtiene del request
+        try {
+            \Log::info('=== DirectorController::create() - USANDO det_directores ===');
+            \Log::info('Request:', $request->all());
 
-        $dirPath = "presidencia/firmas_directores";
+            // 1. VALIDACIONES BÁSICAS
+            if (!$request->has('IDDepartamento') || empty($request->IDDepartamento)) {
+                throw new \Exception('IDDepartamento es requerido');
+            }
 
-        if ($request->hasFile('firma_Director') && $request->file('firma_Director')->isValid()) {
+            if (!$request->has('Nombre_Director') || empty($request->Nombre_Director)) {
+                throw new \Exception('Nombre_Director es requerido');
+            }
+
+            if (!$request->hasFile('firma_Director') || !$request->file('firma_Director')->isValid()) {
+                throw new \Exception('La firma del director es requerida y válida');
+            }
+
+            // 2. PROCESAR ARCHIVO
             $firma = $request->file('firma_Director');
+            $dirPath = "presidencia/firmas_directores";
 
+            \Log::info('Procesando archivo: ' . $firma->getClientOriginalName());
+
+            // Validar tamaño y tipo
+            if ($firma->getSize() > 5 * 1024 * 1024) {
+                throw new \Exception('El archivo es demasiado grande. Máximo 5MB');
+            }
+
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'application/pdf'];
+            if (!in_array($firma->getMimeType(), $allowedMimes)) {
+                throw new \Exception('Tipo de archivo no permitido');
+            }
+
+            // Subir imagen
             $imagePath = $this->ImgUpload(
                 $firma,
                 $request->IDDepartamento,
                 $dirPath,
-                'firma_director_' . $request->IDDepartamento
+                'firma_director_' . $request->IDDepartamento . '_' . time()
             );
 
-            $director->Firma_Director = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->IDDepartamento . "/" . $imagePath;
-        } else {
-            throw new \Exception('La firma no es válida o no fue cargada correctamente.');
+            if (!$imagePath) {
+                throw new \Exception('Error al subir la imagen');
+            }
+
+            $firmaUrl = "https://api.gpcenter.gomezpalacio.gob.mx/" . $dirPath . "/" . $request->IDDepartamento . "/" . $imagePath;
+            \Log::info('URL de firma: ' . $firmaUrl);
+
+            // 3. ELIMINAR DIRECTOR EXISTENTE (si hay)
+            \Log::info('Buscando director existente para departamento: ' . $request->IDDepartamento);
+
+            $existing = DB::table('det_directores')
+                ->where('IdDepartamento', $request->IDDepartamento)
+                ->first();
+
+            if ($existing) {
+                \Log::info('Director existente encontrado, ID: ' . $existing->IdDetDirectores);
+                \Log::info('Eliminando...');
+
+                DB::table('det_directores')
+                    ->where('IdDetDirectores', $existing->IdDetDirectores)
+                    ->delete();
+
+                \Log::info('Director existente eliminado');
+            } else {
+                \Log::info('No hay director existente para este departamento');
+            }
+
+            // 4. INSERTAR NUEVO DIRECTOR EN det_directores
+            \Log::info('Insertando nuevo director en det_directores...');
+
+            $now = now();
+            $usuario = Auth::user()->Usuario ?? 'system';
+
+            $id = DB::table('det_directores')->insertGetId([
+                'IdDepartamento' => $request->IDDepartamento,
+                'Nombre_Director' => $request->Nombre_Director,
+                'Firma_Director' => $firmaUrl,
+                'FechaInicio' => $now->format('Y-m-d'),
+                'FechaAlta' => $now,
+                'Usuario' => $usuario,
+                'Fum' => $now->format('Y-m-d'),
+                'UsuarioFum' => $usuario,
+            ]);
+
+            \Log::info('✅ Director insertado en det_directores con ID: ' . $id);
+
+            // 5. OBTENER DATOS COMPLETOS DE LA VISTA
+            \Log::info('Obteniendo datos de la vista directores...');
+
+            $directorCompleto = DB::table('directores')
+                ->where('IDDepartamento', $request->IDDepartamento)
+                ->first();
+
+            if (!$directorCompleto) {
+                \Log::warning('No se encontró en la vista directores, obteniendo directamente...');
+
+                // Si la vista no se actualizó inmediatamente, obtener de det_directores
+                $directorCompleto = DB::table('det_directores')
+                    ->where('IdDetDirectores', $id)
+                    ->first();
+
+                // Agregar datos del departamento
+                $departamento = DB::table('cat_departamentos')
+                    ->where('IDDepartamento', $request->IDDepartamento)
+                    ->first();
+
+                if ($departamento) {
+                    $directorCompleto->Nombre_Departamento = $departamento->Nombre_Departamento;
+                    $directorCompleto->Centro_Costo = $departamento->Centro_Costo;
+                }
+            }
+
+            \Log::info('Datos del director:', (array)$directorCompleto);
+
+            DB::commit();
+
+            \Log::info('=== DirectorController::create() - COMPLETADO ===');
+
+            return ApiResponse::success($directorCompleto, 'Director registrado exitosamente');
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            \Log::error('❌ ERROR en DirectorController::create: ' . $e->getMessage());
+            \Log::error('Trace: ' . $e->getTraceAsString());
+
+            return ApiResponse::error('Error: ' . $e->getMessage(), 500);
         }
-
-        $director->FechaInicio = now()->format('Y-m-d');
-        $director->FechaAlta = now();
-        $director->Usuario = Auth::user()->Usuario;
-        $director->Fum = now()->format('Y-m-d');
-        $director->UsuarioFum = Auth::user()->Usuario;
-
-        $director->save();
-
-        return ApiResponse::success($director, 'Director registrado exitosamente');
-    } catch (\Exception $e) {
-        return ApiResponse::error($e->getMessage(), 500);
     }
-}
 
     /**
      * Función para guardar una imagen en el microservicio, elimina y guarda la nueva al editar la imagen
@@ -116,7 +211,9 @@ public function create(Request $request)
     private function uploadToMicroservice($file, $destination, $dir, $filename)
     {
         try {
-            $client = new \GuzzleHttp\Client();
+            $client = new \GuzzleHttp\Client([
+                'verify' => false, // ⚠️ SOLO PARA DESARROLLO
+            ]);
 
             $response = $client->request('POST', 'https://api.gpcenter.gomezpalacio.gob.mx/api/smImgUpload', [
                 'multipart' => [

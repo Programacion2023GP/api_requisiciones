@@ -14,31 +14,46 @@ class AutorizadoresController extends Controller
     public function create(Request $request, int $id = null)
     {
         try {
-            $autorizador = Autorizadores::find($request->Usuario);
-            // return $autorizador;
-            Log::error('Este es un mensaje de error', ['contexto' => $autorizador]);
+        
+
+            // VALIDAR que tenemos el dato correcto
+            $nombreAutorizador = $request->Autorizador ?? $request->Usuario ?? null;
+
+            if (empty($nombreAutorizador)) {
+                throw new \Exception('El nombre del autorizador es requerido');
+            }
+
+            // CORREGIDO: Buscar por el campo Autorizador, no por ID
+            $autorizador = Autorizadores::where('Autorizador', $nombreAutorizador)->first();
 
             if ($autorizador) {
-                // Actualizar usuario
-                $autorizador->delete();
+                // Actualizar el existente en lugar de eliminarlo
+                $autorizador->update([
+                    'Permiso_Autorizar' => $request->Permiso_Autorizar ?? $autorizador->Permiso_Autorizar,
+                    'Permiso_Asignar' => $request->Permiso_Asignar ?? $autorizador->Permiso_Asignar,
+                    'Permiso_Cotizar' => $request->Permiso_Cotizar ?? $autorizador->Permiso_Cotizar,
+                    'Permiso_Orden_Compra' => $request->Permiso_Orden_Compra ?? $autorizador->Permiso_Orden_Compra,
+                    'Permiso_Surtir' => $request->Permiso_Surtir ?? $autorizador->Permiso_Surtir,
+                ]);
             } else {
                 $autorizador = new Autorizadores();
+                $autorizador->Autorizador = $nombreAutorizador;
+                $autorizador->Permiso_Autorizar = $request->Permiso_Autorizar ?? 0;
+                $autorizador->Permiso_Asignar = $request->Permiso_Asignar ?? 0;
+                $autorizador->Permiso_Cotizar = $request->Permiso_Cotizar ?? 0;
+                $autorizador->Permiso_Orden_Compra = $request->Permiso_Orden_Compra ?? 0;
+                $autorizador->Permiso_Surtir = $request->Permiso_Surtir ?? 0;
             }
-            $autorizador->Autorizador = $request->Usuario;
-            $autorizador->Permiso_Autorizar = $request->Permiso_Autorizar;
-            $autorizador->Permiso_Asignar = $request->Permiso_Asignar;
-            $autorizador->Permiso_Cotizar = $request->Permiso_Cotizar;
-            $autorizador->Permiso_Orden_Compra = $request->Permiso_Orden_Compra;
-            $autorizador->Permiso_Surtir = $request->Permiso_Surtir;
 
 
             $autorizador->save();
-            Log::info('Este es un mensaje de error', ['contexto' => $autorizador]);
 
-            return ApiResponse::success($autorizador, 'Autorizador creado con exito');
-        } catch (Exception $e) {
-            Log::error($e); // Mejor usar Log::error() para registrar errores
-            return ApiResponse::error('El autorizador no se pudo crear', 500);
+           
+
+            return ApiResponse::success($autorizador, 'Autorizador procesado exitosamente');
+        } catch (\Exception $e) {
+
+            return ApiResponse::error('Error al procesar autorizador: ' . $e->getMessage(), 500);
         }
     }
     public function indexAutorizadores(Request $request)
