@@ -30,7 +30,7 @@ class   RequisicionesController extends Controller
             if (!$requisicion) {
                 // Actualizar usuario   
                 $requisicion = new Requisiciones();
-                $folio = Requisiciones::where('Ejercicio', date('Y'))->max('IDRequisicion') ?? 0;
+                $folio = Requisiciones::where('Ejercicio', date('Y'))->lockForUpdate()->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
                 $requisicion->Status = Auth::user()->Rol == "DIRECTOR" ? "AU" : "CP";
                 if (Auth::user()->Rol == "DIRECTOR") {
