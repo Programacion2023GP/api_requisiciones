@@ -90,6 +90,10 @@ class UsersController extends Controller
     }
     public function createOrUpdate(Request $request, int $id = null)
     {
+        config(['logging.channels.stack.channels' => ['single']]);
+
+        // AUMENTAR TIME LIMIT
+        set_time_limit(180);
         DB::beginTransaction(); // Inicia la transacción
 
         try {
@@ -144,127 +148,43 @@ class UsersController extends Controller
                 $firmaFile = $request->file('firma_Director');
 
                 // DEBUG del archivo recibido
-                \Log::info('Archivo recibido:');
-                \Log::info('  - Nombre: ' . $firmaFile->getClientOriginalName());
-                \Log::info('  - Tamaño: ' . $firmaFile->getSize());
-                \Log::info('  - MIME: ' . $firmaFile->getClientMimeType());
-                \Log::info('  - Extensión: ' . $firmaFile->getClientOriginalExtension());
-                \Log::info('  - ¿Válido?: ' . ($firmaFile->isValid() ? 'Sí' : 'No'));
-
+          
                 if (!$firmaFile->isValid()) {
                     \Log::error('Archivo no válido. Error: ' . $firmaFile->getErrorMessage());
                     throw new Exception('El archivo de firma no es válido: ' . $firmaFile->getErrorMessage());
                 }
+                $dataArray = $request->all();
 
-                // Obtener contenido del archivo UNA VEZ
-                \Log::info('Obteniendo contenido del archivo...');
-                $fileContent = file_get_contents($firmaFile->getRealPath());
-                $originalName = $firmaFile->getClientOriginalName();
-                $mimeType = $firmaFile->getClientMimeType();
-
-                \Log::info('Contenido obtenido: ' . strlen($fileContent) . ' bytes');
-
-                // DEBUG de departamentos
-                \Log::info('IDDepartamentos a procesar: ' . json_encode($request->IDDepartamentos));
-                \Log::info('Nombre_Director: ' . ($user->NombreCompleto ?? 'NULL'));
-                \Log::info('Total departamentos: ' . count($request->IDDepartamentos));
-
+                $firmaUrl = $this->handleImageUpload($request, $dataArray, "firma_Director","firmas");
                 foreach ($request->IDDepartamentos as $index => $idDep) {
-                    \Log::info("--- Procesando departamento #" . ($index + 1) . " (ID: {$idDep}) ---");
+                    // Log::info("--- Procesando departamento #" . ($index + 1) . " (ID: {$idDep}) ---" . " (Director: {$user->Nombre} {$user->Paterno} {$user->Materno}) ---");
 
                     try {
                         // Crear archivo temporal para CADA departamento
-                        $tempPath = tempnam(sys_get_temp_dir(), 'firma_');
-                        \Log::info('Ruta temporal creada: ' . $tempPath);
-
-                        if ($tempPath === false) {
-                            \Log::error('No se pudo crear archivo temporal');
-                            throw new Exception('No se pudo crear archivo temporal');
-                        }
-
-                        // Escribir contenido en archivo temporal
-                        \Log::info('Escribiendo contenido en archivo temporal...');
-                        $bytesWritten = file_put_contents($tempPath, $fileContent);
-
-                        if ($bytesWritten === false) {
-                            \Log::error('No se pudo escribir en archivo temporal');
-                            @unlink($tempPath);
-                            throw new Exception('No se pudo escribir en archivo temporal');
-                        }
-
-                        \Log::info('Bytes escritos: ' . $bytesWritten);
-                        \Log::info('¿Archivo temporal existe?: ' . (file_exists($tempPath) ? 'Sí' : 'No'));
-                        \Log::info('Tamaño archivo temporal: ' . (file_exists($tempPath) ? filesize($tempPath) . ' bytes' : 'No existe'));
-
-                        // Crear nuevo UploadedFile para cada departamento
-                        \Log::info('Creando UploadedFile...');
-                        $firmaCopy = new \Illuminate\Http\UploadedFile(
-                            $tempPath,
-                            $originalName,
-                            $mimeType,
-                            null,
-                            true // test = true (no mueve el archivo)
-                        );
-
-                        \Log::info('UploadedFile creado:');
-                        \Log::info('  - Nombre: ' . $firmaCopy->getClientOriginalName());
-                        \Log::info('  - Tamaño: ' . $firmaCopy->getSize());
-                        \Log::info('  - ¿Válido?: ' . ($firmaCopy->isValid() ? 'Sí' : 'No'));
-
+                       
                         $newRequest = new Request([
                             'IDDepartamento' => $idDep,
-                            'Nombre_Director' =>         $user->Nombre . ' ' . $user->Paterno . ' ' . $user->Materno  
-,
+                            'Nombre_Director' =>         $user->Nombre . ' ' . $user->Paterno . ' ' . $user->Materno,
                         ]);
 
-                        \Log::info('Nuevo Request creado:');
-                        \Log::info('  - IDDepartamento: ' . $idDep);
-                        \Log::info('  - Nombre_Director: ' . ($user->NombreCompleto ?? 'NULL'));
+               
 
-                        $newRequest->files->set('firma_Director', $firmaCopy);
 
-                        // Verificar que el archivo se adjuntó
-                        if ($newRequest->hasFile('firma_Director')) {
-                            \Log::info('✅ Archivo adjuntado correctamente al request');
-                        } else {
-                            \Log::error('❌ Archivo NO se adjuntó al request');
-                        }
+                       
 
-                        \Log::info('Llamando a DepartamentsController::create()...');
-
-                        try {
-                            $result = (new DepartamentsController())->create($newRequest);
-                            \Log::info('✅ DepartamentsController::create() ejecutado exitosamente');
-
-                            // Si devuelve una respuesta JSON, podemos verla
-                            if ($result instanceof \Illuminate\Http\JsonResponse) {
-                                $responseData = $result->getData();
-                                \Log::info('Respuesta del controller:', (array)$responseData);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error('❌ ERROR en DepartamentsController::create(): ' . $e->getMessage());
-                            \Log::error('Trace: ' . $e->getTraceAsString());
-                            @unlink($tempPath);
-                            throw new Exception("Error al procesar departamento {$idDep}: " . $e->getMessage());
-                        }
+                        
+                            $result = (new DepartamentsController())->create($newRequest,$firmaUrl);
+                         
 
                         // Limpiar archivo temporal
-                        \Log::info('Eliminando archivo temporal...');
-                        if (file_exists($tempPath)) {
-                            $deleted = @unlink($tempPath);
-                            \Log::info('Archivo temporal eliminado: ' . ($deleted ? 'Sí' : 'No'));
-                        }
+                       
 
-                        \Log::info("✅ Departamento {$idDep} procesado correctamente");
                     } catch (\Exception $e) {
-                        \Log::error("❌ ERROR en departamento {$idDep}: " . $e->getMessage());
+                        \Log::error("❌ ERROR en departamento ");
                         throw $e;
                     }
                 }
-
-                \Log::info('=== FIN PROCESAMIENTO FIRMA DIRECTOR ===');
             }
-            // 4. Lógica de roles con manejo de booleanos
             if (in_array($request->Rol, ['AUTORIZADOR', 'DIRECTORCOMPRAS', 'CAPTURA', 'REQUISITOR', 'DIRECTOR'])) {
                 // Convertir valores booleanos antes de enviar al controller
                 $this->procesarAutorizador($request, $user);
@@ -302,8 +222,13 @@ class UsersController extends Controller
                         "SeguimientoRequis" => 1,
                         "Soporte" => 1,
                     ]), $user->Usuario);
-
-                    (new DirectorController())->create($request);
+                    if (!$request->hasFile('firma_Director')) {
+                        $newRequest = new Request([
+                            'IDDepartamento' => $request->IDDepartamento,
+                            'Nombre_Director' => $request->Nombre . ' ' . $request->Paterno . ' ' . $request->Materno,
+                        ]);
+                        $result = (new DepartamentsController())->createDirectorWithoutSignature($newRequest);
+                    }
                     break;
             }
 

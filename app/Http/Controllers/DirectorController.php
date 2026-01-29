@@ -12,7 +12,7 @@ class DirectorController extends Controller
     public function create(Request $request)
     {
         try {
-            $director = Director::find($request->IDDepartamento);
+            $director = Director::where($request->IDDepartamento)->where("Nombre_Director", $request->Nombre . ' ' . $request->Paterno . ' '  . $request->Materno)->first();
             if ($director) {
                 // Actualizar usuario
                 $director->delete();
