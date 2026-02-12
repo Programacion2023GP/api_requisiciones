@@ -616,7 +616,7 @@ class   RequisicionesController extends Controller
     public function detailsRequisicion(Request $request)
     {
         try {
-            $products = DB::table('products_details')->where('Ejercicio', $request->Ejercicio)->where('IDRequisicion', $request->IDRequisicion)->get();
+            $products = DB::table('products_details')->where('Ejercicio', $request->Ejercicio)->where('id', $request->IDRequisicion)->get();
 
             return ApiResponse::success($products, 'Productos obtenidos con éxito');
         } catch (\Exception $e) {
