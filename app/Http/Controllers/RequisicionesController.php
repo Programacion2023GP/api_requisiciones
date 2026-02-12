@@ -31,6 +31,13 @@ class   RequisicionesController extends Controller
                 // Actualizar usuario   
                 $requisicion = new Requisiciones();
                 $requisicion->Ejercicio = date('Y');
+                $requisicion->FechaCaptura = $request->FechaCaptura;
+                $requisicion->FechaAsignacion = $request->FechaAsignacion;
+                $requisicion->FechaCotizacion = $request->FechaCotizacion;
+                $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
+    
+                // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
+                $requisicion->FUM = date('Y-m-d H:i:s');
 
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->lockForUpdate()->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
@@ -50,13 +57,6 @@ class   RequisicionesController extends Controller
 
             //centro de costo
 
-            $requisicion->FechaCaptura = $request->FechaCaptura;
-            $requisicion->FechaAsignacion = $request->FechaAsignacion;
-            $requisicion->FechaCotizacion = $request->FechaCotizacion;
-            $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
-
-            // $requisicion->FechaCaptura = date('Y-m-d H:i:s');
-            $requisicion->FUM = date('Y-m-d H:i:s');
 
             // $requisicion->UsuarioCa = Auth::user()->Usuario;
             $requisicion->IDDepartamento = Auth::user()->Rol == "CAPTURA" ? Auth::user()->IDDepartamento :  $request->IDDepartamento;
