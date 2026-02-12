@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/vobo', [RequisicionesController::class, 'vobo']);
         Route::post('/show', [RequisicionesController::class, 'show']);
         Route::post('/changeStatus', [RequisicionesController::class, 'changestatus']);
+        Route::post('/changedates', [RequisicionesController::class, 'changedates']);
 
         Route::post('/detailsRequisicion', [RequisicionesController::class, 'detailsRequisicion']);
 

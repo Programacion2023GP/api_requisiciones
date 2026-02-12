@@ -30,6 +30,8 @@ class   RequisicionesController extends Controller
             if (!$requisicion) {
                 // Actualizar usuario   
                 $requisicion = new Requisiciones();
+                $requisicion->Ejercicio = date('Y');
+
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->lockForUpdate()->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
                 $requisicion->Status = Auth::user()->Rol == "DIRECTOR" ? "AU" : "CP";
@@ -46,7 +48,6 @@ class   RequisicionesController extends Controller
             }
             $centro_costo = Departamento::where('IDDepartamento', $request->IDDepartamento)->first();
 
-            $requisicion->Ejercicio = date('Y');
             //centro de costo
 
             $requisicion->FechaCaptura = $request->FechaCaptura;
@@ -324,20 +325,27 @@ class   RequisicionesController extends Controller
                     $requisicion->UsuarioAU = Auth::user()->Usuario;
                     $requisicion->FechaAutorizacion = now(); // Usar función nativa para la fecha actual
                     $requisicion->Director = Auth::user()->NombreCompleto;
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
 
                     $requisicion->FechaVoBo = now();
                     break;
                 case "AS":
                     $requisicion->UsuarioAS = Auth::user()->Usuario;
                     $requisicion->FechaAsignacion = now();
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
+
                     break;
                 case "RE":
                     $requisicion->UsuarioRE = Auth::user()->Usuario;
                     $requisicion->FechaRealizacion = now();
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
+
                     break;
                 case "OC":
                     $requisicion->UsuarioOC = Auth::user()->Usuario;
                     $requisicion->FechaOrdenCompra = now();
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
+
                     // $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
                     //     ->where('IDRequisicion', $requisicion->IDRequisicion)
                     //     ->whereNull('Proveedor')
@@ -351,6 +359,8 @@ class   RequisicionesController extends Controller
                 case "CO":
                     $requisicion->UsuarioCO = Auth::user()->Usuario;
                     $requisicion->FechaCotizacion = now();
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
+
                     // $condition = DetailRequisition::where('Ejercicio', $requisicion->Ejercicio)
                     //     ->where('IDRequisicion', $requisicion->IDRequisicion)
                     //     ->whereNull('IDproveedor1')
@@ -369,6 +379,11 @@ class   RequisicionesController extends Controller
                     break;
                 case "CA":
                     $requisicion->Motivo_Cancelacion =  $request->Motivo_Cancelacion;
+                    $requisicion->UsuarioCA = Auth::user()->Usuario;
+                    $requisicion->FechaCancelacion =  now();
+
+                    $requisicion->Orden_Compra =  $request->ClavePresupuestal;
+
 
                     break;
                 default:
@@ -501,6 +516,40 @@ class   RequisicionesController extends Controller
                     break;
                 default:
             }
+
+
+            // Guardar los cambios en la base de datos
+            $requisicion->update();
+
+            return ApiResponse::success($requisicion, 'Requisición actualizada con éxito');
+        } catch (Exception $e) {
+            DB::rollBack(); // Revertir cambios si hay un error
+            if ($e->getMessage() == 'No se puede avanzar porque no se han cotizado todos los productos') {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
+            if ($e->getMessage() == 'No se puede avanzar porque no se han asignado provedor a todos los productos') {
+                return ApiResponse::error($e->getMessage(), 500);
+            }
+
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+    public function changedates(Request $request)
+    {
+        try {
+            // Buscar la requisición por su ID
+            $requisicion = Requisiciones::find($request->id);
+            // Si no se encuentra la requisición, retornar un error
+            if (!$requisicion) {
+                return ApiResponse::error("Requisición no encontrada", 404);
+            }
+
+            // Actualizar la requisición según el estado
+            $requisicion->FechaCaptura = $request->FechaCaptura;
+            $requisicion->FechaAutorizacion = $request->FechaAutorizacion;
+            $requisicion->FechaAsignacion = $request->FechaAsignacion;
+            $requisicion->FechaCotizacion = $request->FechaCotizacion;
+            $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
 
 
             // Guardar los cambios en la base de datos
