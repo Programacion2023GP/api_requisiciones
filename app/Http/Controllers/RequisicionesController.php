@@ -550,10 +550,23 @@ class   RequisicionesController extends Controller
             $requisicion->FechaAsignacion = $request->FechaAsignacion;
             $requisicion->FechaCotizacion = $request->FechaCotizacion;
             $requisicion->FechaOrdenCompra = $request->FechaOrdenCompra;
+            // $fechaBase = $request->FechaAsignacion
+            //     ?? $request->FechaAutorizacion
+            //     ?? $request->FechaCaptura
+            //     ?? null;
+
+            // $requisicion->Ejercicio = $fechaBase
+            //     ? substr($fechaBase, 0, 4)
+            //     : null;
 
 
             // Guardar los cambios en la base de datos
             $requisicion->update();
+
+
+
+
+
 
             return ApiResponse::success($requisicion, 'Requisición actualizada con éxito');
         } catch (Exception $e) {

@@ -321,7 +321,7 @@ class UsersController extends Controller
                 return ApiResponse::error('Credenciales incompletas', 400);
             }
 
-            $user = User::where('Usuario', $credentials['Usuario'])->first();
+            $user = User::where('Usuario', $credentials['Usuario'])->where('active',true)->first();
             $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
             $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
             $continue =false;
