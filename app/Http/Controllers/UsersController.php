@@ -314,104 +314,126 @@ class UsersController extends Controller
     public function login(Request $request)
     {
         try {
-            // Obtener las credenciales del request
+            // Validar entrada
             $credentials = $request->only('Usuario', 'Password');
 
-            if (!isset($credentials['Usuario']) || !isset($credentials['Password'])) {
-                return ApiResponse::error('Credenciales incompletas', 400);
+            if (empty($credentials['Usuario']) || empty($credentials['Password'])) {
+                return ApiResponse::error('Usuario y contraseña son requeridos', 400);
             }
 
-            $user = User::where('Usuario', $credentials['Usuario'])->where('active',true)->first();
-            $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
-            $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
-            $continue =false;
-            if ($departamento->access) {
-                $continue = true;
+            // Buscar usuario - SIN filtrar por 'active' porque NO existe
+            $user = User::where('Usuario', $credentials['Usuario'])->first();
+
+            if (!$user) {
+                return ApiResponse::error('Usuario no encontrado', 401);
             }
-           
-            // return $continue;
-            $departamentosUser = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)->pluck('IDDepartamento')->toArray();
-            if ($user && $user->Password === $credentials['Password']) {
-                $token = $user->createToken('YourAppName')->plainTextToken;
-                $menuPermisos = DB::select("
-                SELECT 
+
+            // Validar contraseña
+            if ($user->Password !== $credentials['Password']) {
+                return ApiResponse::error('Contraseña incorrecta', 401);
+            }
+
+            // Validar departamento del usuario
+            if (empty($user->IDDepartamento)) {
+                return ApiResponse::error('Usuario no tiene departamento asignado', 403);
+            }
+
+            $departamento = Departamento::where("IDDepartamento", $user->IDDepartamento)->first();
+
+            if (!$departamento) {
+                return ApiResponse::error('Departamento del usuario no encontrado', 403);
+            }
+
+            $continue = (bool) ($departamento->access ?? false);
+
+            // Obtener departamentos adicionales del usuario
+            $departamentosUser = RelUsuarioDepartamento::where('IDUsuario', $user->IDUsuario)
+                ->pluck('IDDepartamento')
+                ->toArray();
+
+            // Obtener permisos del menú
+            $menuPermisos = DB::select("
+            SELECT 
                 cm.Id,
                 cm.IdMenu,
-                    cm.Menu,
-                    cm.MenuPadre,
-                    cm.Icon,
-            
+                cm.Menu,
+                cm.MenuPadre,
+                cm.Icon,
                 CASE 
                     WHEN rmu.Permiso='S' THEN 1
                     ELSE 0
                 END AS EstadoPermiso
-            FROM 
-                cat_menus cm
-            LEFT JOIN 
-                relmenuusuario rmu ON rmu.IdMenu = cm.IdMenu AND rmu.Usuario = ?
-            WHERE cm.active =1
-            ORDER BY 
-                cm.IdMenu;
-                    ", [$credentials['Usuario']]);
-                $route = ""; // Valor predeterminado
+            FROM cat_menus cm
+            LEFT JOIN relmenuusuario rmu 
+                ON rmu.IdMenu = cm.IdMenu AND rmu.Usuario = ?
+            WHERE cm.active = 1
+            ORDER BY cm.IdMenu
+        ", [$credentials['Usuario']]);
 
-                // Orden de prioridad con la clave como el menú original y el valor como el menú relacionado
+            // Determinar ruta de redirección
+            $route = $this->determineRedirectRoute($menuPermisos);
 
-                if ($route == "") {
-                    foreach ($menuPermisos as $mP) {
-                        if ((trim($mP->IdMenu) == "Listado") && $mP->EstadoPermiso == 1) {
-                            $route = "MnuRequisiciones";
-                        }
-                    }
-                }
-                if ($route == "") {
+            $canAccess = ($user->Rol === "SISTEMAS") || $continue;
 
-                    foreach ($menuPermisos as $mP) {
-                        if (trim($mP->IdMenu) == "CatProveedores" && $mP->EstadoPermiso == 1) {
-                            $route = "CatProveedores";
-                        }
-                    }
-                }
-                if ($route == "") {
+            // Obtener permisos del autorizador
+            $permisos = Autorizadores::where('Autorizador', $credentials['Usuario'])->first();
 
-                    foreach ($menuPermisos as $mP) {
-                        if ((trim($mP->IdMenu) == "Usuarios" || trim($mP->IdMenu) ==  "RequisicionesAdd") && $mP->EstadoPermiso == 1) {
-                            $route = "MnuSeguridad";
-                        }
-                    }
-                }
-                if ($route == "") {
+            // Generar token
+            $token = $user->createToken('YourAppName')->plainTextToken;
 
-                    foreach ($menuPermisos as $mP) {
-                        if ((trim($mP->IdMenu) == "CatDepartamentos" || trim($mP->IdMenu) ==  "CatDepartamentos") && $mP->EstadoPermiso == 1) {
-                            $route = "CatDepartamentos";
-                        }
-                    }
-                }
-                // return $user->Rol;
-                $canAccess = $user->Rol == "SISTEMAS" || $continue;
-
-                return ApiResponse::success([
-                    "permisos" => $permisos,
-                    "menuPermiso" => $menuPermisos,
-                    "token" => $token,
-                    "group" => $departamentosUser,
-                    "role" => $user->Rol,
-                    "redirect" => $canAccess ? "/#/" . $route : "/#/access-denied",
-                    "centro_costo" => $departamento->Centro_Costo,
-                    "name" => $user->NombreCompleto,
-                    "continue" => $canAccess,
-                ], 'Bienvenido al sistema');
-            }
-
-            return ApiResponse::error('Credenciales incorrectas', 500);
-        } catch (Exception $e) {
-
-            return ApiResponse::error('Credenciales incorrectas', 500);
+            return ApiResponse::success([
+                "permisos" => $permisos,
+                "menuPermiso" => $menuPermisos,
+                "token" => $token,
+                "group" => $departamentosUser,
+                "role" => $user->Rol,
+                "redirect" => $canAccess ? "/#/" . ($route ?: "dashboard") : "/#/access-denied",
+                "centro_costo" => $departamento->Centro_Costo ?? null,
+                "name" => $user->NombreCompleto ?? $user->Usuario,
+                "continue" => $canAccess,
+            ], 'Bienvenido al sistema');
+        } catch (\Exception $e) {
+            // NO hacer log complejo que pueda causar timeout
+            return ApiResponse::error('Error al procesar la solicitud', 500);
         }
     }
 
+    private function determineRedirectRoute($menuPermisos)
+    {
+        if (empty($menuPermisos)) {
+            return "dashboard";
+        }
 
+        // Prioridad 1: Listado
+        foreach ($menuPermisos as $mP) {
+            if (isset($mP->IdMenu) && trim($mP->IdMenu) === "Listado" && ($mP->EstadoPermiso ?? 0) == 1) {
+                return "MnuRequisiciones";
+            }
+        }
+
+        // Prioridad 2: CatProveedores
+        foreach ($menuPermisos as $mP) {
+            if (isset($mP->IdMenu) && trim($mP->IdMenu) === "CatProveedores" && ($mP->EstadoPermiso ?? 0) == 1) {
+                return "CatProveedores";
+            }
+        }
+
+        // Prioridad 3: Seguridad
+        foreach ($menuPermisos as $mP) {
+            if (isset($mP->IdMenu) && (trim($mP->IdMenu) === "Usuarios" || trim($mP->IdMenu) === "RequisicionesAdd") && ($mP->EstadoPermiso ?? 0) == 1) {
+                return "MnuSeguridad";
+            }
+        }
+
+        // Prioridad 4: Departamentos
+        foreach ($menuPermisos as $mP) {
+            if (isset($mP->IdMenu) && trim($mP->IdMenu) === "CatDepartamentos" && ($mP->EstadoPermiso ?? 0) == 1) {
+                return "CatDepartamentos";
+            }
+        }
+
+        return "dashboard";
+    }
 
 
 
