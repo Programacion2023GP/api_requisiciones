@@ -11,39 +11,38 @@ use Illuminate\Support\Facades\Storage;
 class DetailsRequisitionController extends Controller
 {
     // Crear producto
-public function create(int $idRequisicion, string $cantidad, string $descripcion, $imagen = null)
-{
-    $departmentsController = new DepartamentsController();
-    $dirPath = "presidencia/producto";
+    public function create(int $idRequisicion, string $cantidad, string $descripcion, $imagen = null)
+    {
+        $departmentsController = new DepartamentsController();
+        $dirPath = "presidencia/producto";
 
-    try {
-        // 1️⃣ Crear el producto sin imagen
-        $details = new DetailRequisition();
-        $details->IDRequisicion = $idRequisicion;
-        $details->Cantidad = $cantidad;
-        $details->Descripcion = $descripcion;
-        $details->Ejercicio = date('Y');
-        $details->save();
-
-        // 2️⃣ Subir imagen si existe
-        if ($imagen instanceof \Illuminate\Http\UploadedFile && $imagen->isValid()) {
-            $imagePath = $departmentsController->ImgUpload(
-                $imagen,
-                $details->IDDetalle,
-                $dirPath,
-                'producto_' . $details->IDDetalle
-            );
-
-            $details->image ="https://api.gpcenter.gomezpalacio.gob.mx/" . "$dirPath/"  . $details->IDDetalle . "/" . $imagePath;
+        try {
+            // 1️⃣ Crear el producto sin imagen
+            $details = new DetailRequisition();
+            $details->IDRequisicion = $idRequisicion;
+            $details->Cantidad = $cantidad;
+            $details->Descripcion = $descripcion;
+            $details->Ejercicio = date('Y');
             $details->save();
-        }
 
-       
-    } catch (Exception $e) {
-        Log::error("Error en create: " . $e->getMessage());
-        throw $e;
+            // 2️⃣ Subir imagen si existe
+            if ($imagen instanceof \Illuminate\Http\UploadedFile && $imagen->isValid()) {
+                $imagePath = $departmentsController->ImgUpload(
+                    $imagen,
+                    $details->IDDetalle,
+                    $dirPath,
+                    'producto_' . $details->IDDetalle
+                );
+
+                $appUrl = rtrim(env('APP_URL', 'http://localhost'), '/');
+                $details->image = $appUrl . "/storage/" . "$dirPath/" . $details->IDDetalle . "/" . $imagePath;
+                $details->save();
+            }
+        } catch (Exception $e) {
+            Log::error("Error en create: " . $e->getMessage());
+            throw $e;
+        }
     }
-}
     public function update(int $idDetalle, string $cantidad, string $descripcion, $imagen = null)
     {
         $departmentsController = new DepartamentsController();
@@ -71,7 +70,8 @@ public function create(int $idRequisicion, string $cantidad, string $descripcion
                     $dirPath,
                     'producto_' . $details->IDDetalle
                 );
-            $details->image ="https://api.gpcenter.gomezpalacio.gob.mx/" . "$dirPath/"  . $details->IDDetalle . "/" . $imagePath;
+                $appUrl = rtrim(env('APP_URL', 'http://localhost'), '/');
+                $details->image = $appUrl . "/storage/" . "$dirPath/" . $details->IDDetalle . "/" . $imagePath;
             }
 
             $details->save();
@@ -107,11 +107,15 @@ public function create(int $idRequisicion, string $cantidad, string $descripcion
         try {
             // Extraer la ruta del archivo de la URL
             $path = parse_url($imageUrl, PHP_URL_PATH);
-            // Remover el primer slash si existe
+            // Remover el primer slash y el prefijo "storage/" para obtener
+            // la ruta relativa dentro del disco 'public'
             $path = ltrim($path, '/');
-            
-            if (Storage::exists($path)) {
-                Storage::delete($path);
+            if (str_starts_with($path, 'storage/')) {
+                $path = substr($path, strlen('storage/'));
+            }
+
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
             }
         } catch (Exception $e) {
             Log::error("Error eliminando imagen: " . $e->getMessage());
@@ -153,7 +157,10 @@ public function create(int $idRequisicion, string $cantidad, string $descripcion
                     $dirPath,
                     'producto_' . $details->IDDetalle
                 );
-                $details->image = url("$dirPath/" . $imagePath);
+            Log::info("imagen path: " . $imagePath);
+
+                $appUrl = rtrim(env('APP_URL', 'http://localhost'), '/');
+                $details->image = $appUrl . "/storage/" . "$dirPath/" . $details->IDDetalle . "/" . $imagePath;
                 $details->save();
             }
 

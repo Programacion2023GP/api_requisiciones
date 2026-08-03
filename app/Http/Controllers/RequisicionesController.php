@@ -98,7 +98,15 @@ class   RequisicionesController extends Controller
                 }
                 ksort($productos);
             }
-
+            \Log::info('Productos recibidos', [
+                'productos' => array_map(function ($p) {
+                    $img = $p['image'] ?? null;
+                    return [
+                        'keys' => array_keys($p),
+                        'image_type' => is_object($img) ? get_class($img) : gettype($img),
+                    ];
+                }, $productos)
+            ]);
             // 🔥 CORRECCIÓN: Procesar archivos de imagen correctamente
             foreach ($request->allFiles() as $key => $file) {
                 if (preg_match('/^Productos\[(\d+)\]\[image\]$/', $key, $matches)) {
