@@ -215,6 +215,14 @@ class UsersController extends Controller
                     (new MenuUserController())->create(new Request(["Listado" => 1]), $user->Usuario);
                     break;
 
+                case 'AUDITOR':
+                    // Rol de solo lectura: únicamente consulta de requisiciones y seguimiento
+                    (new MenuUserController())->create(new Request([
+                        "Listado" => 1,
+                        "SeguimientoRequis" => 1,
+                    ]), $user->Usuario);
+                    break;
+
                 case 'DIRECTOR':
                     (new MenuUserController())->create(new Request([
                         "Listado" => 1,

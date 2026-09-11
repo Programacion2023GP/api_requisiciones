@@ -9,6 +9,7 @@ use App\Models\Provedor;
 use App\Models\Requisiciones;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DetailsRequisicionesController extends Controller
@@ -16,6 +17,9 @@ class DetailsRequisicionesController extends Controller
     public function update(Request $request)
     {
         try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
             // Obtener todos los detalles de la requisición
             $detalles = [];
             foreach ($request->all() as $key => $value) {
@@ -81,6 +85,9 @@ class DetailsRequisicionesController extends Controller
    public function ordenCompra(Request $request)
 {
     try {
+        if ($response = $this->bloquearAuditor()) {
+            return $response;
+        }
         $requisiciones = DetailRequisition::where('IDRequisicion', $request->IDRequisicion)
             ->where('Ejercicio', $request->Ejercicio)
             ->get();
@@ -113,10 +120,22 @@ class DetailsRequisicionesController extends Controller
                     'd.*',
                     'r.ObservacionesCot'
                 )
-                ->first();
-            return ApiResponse::success($details, 'Detalles de requisiciones encontrados con éxito');
+                ->first();        return ApiResponse::success($details, 'Detalles de requisiciones encontrados con éxito');
         } catch (Exception $e) {
             return ApiResponse::error($e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Bloquea la petición si el usuario autenticado tiene el rol AUDITOR (solo lectura).
+     * Devuelve una respuesta de error 403, o null si puede continuar.
+     */
+    private function bloquearAuditor()
+    {
+        $user = Auth::user();
+        if ($user && $user->Rol === 'AUDITOR') {
+            return ApiResponse::error('El rol Auditor solo tiene permisos de consulta', 403);
+        }
+        return null;
     }
 }

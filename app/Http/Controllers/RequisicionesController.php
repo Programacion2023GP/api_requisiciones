@@ -20,6 +20,10 @@ class   RequisicionesController extends Controller
 {
     public function create(Request $request)
     {
+        if ($response = $this->bloquearAuditor()) {
+            return $response;
+        }
+
         DB::beginTransaction(); // Inicia la transacción
         $message = "Requisicion creada con exito";
         $update = false;
@@ -165,6 +169,9 @@ class   RequisicionesController extends Controller
     public function asignedAutorized(Request $request)
     {
         try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
             //code...
             $requisicion = Requisiciones::where("Id", $request->id)->first(); // Cambiar get() por first()
             if (!$requisicion) {
@@ -319,6 +326,9 @@ class   RequisicionesController extends Controller
     public function update(Request $request)
     {
         try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
             // Buscar la requisición por su ID
             $requisicion = Requisiciones::find($request->id);
 
@@ -414,10 +424,13 @@ class   RequisicionesController extends Controller
 
             return ApiResponse::error($e->getMessage(), 500);
         }
-    }
-    public function changestatus(Request $request)
+    }    public function changestatus(Request $request)
     {
+
         try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
             // Buscar la requisición por su ID
             $requisicion = Requisiciones::find($request->id);
             // Si no se encuentra la requisición, retornar un error
@@ -545,6 +558,9 @@ class   RequisicionesController extends Controller
     public function changedates(Request $request)
     {
         try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
             // Buscar la requisición por su ID
             $requisicion = Requisiciones::find($request->id);
             // Si no se encuentra la requisición, retornar un error
@@ -592,6 +608,9 @@ class   RequisicionesController extends Controller
     public function vobo(Request $request)
     {
         try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
             $requisicion = Requisiciones::find($request->id);
 
             if (!$requisicion) {
@@ -770,5 +789,18 @@ class   RequisicionesController extends Controller
         } catch (\Exception $e) {
             return ApiResponse::error("No se pudieron obtener los productos", 500);
         }
+    }
+
+    /**
+     * Bloquea la petición si el usuario autenticado tiene el rol AUDITOR (solo lectura).
+     * Devuelve una respuesta de error 403, o null si puede continuar.
+     */
+    private function bloquearAuditor()
+    {
+        $user = Auth::user();
+        if ($user && $user->Rol === 'AUDITOR') {
+            return ApiResponse::error('El rol Auditor solo tiene permisos de consulta', 403);
+        }
+        return null;
     }
 }
