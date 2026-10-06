@@ -31,6 +31,7 @@ class ReportesController extends Controller
                 ->leftJoin('cat_departamentos as cd', 'cd.IDDepartamento', '=', 'r.IDDepartamento')
                 ->whereIn('r.Status', ['OC', 'SU'])
                 ->select(
+                    'r.Id',
                     'r.IDRequisicion',
                     'r.Ejercicio',
                     'r.Status',
@@ -52,6 +53,26 @@ class ReportesController extends Controller
             }
 
             return ApiResponse::success($query->get(), 'Relación de gastos obtenida con éxito');
+        } catch (Exception $e) {
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Datos para el PDF de una requisición (mismo formato que usa el módulo de requisiciones)
+     */
+    public function requisicionPdf(Request $request)
+    {
+        try {
+            $pdfData = DB::table('requisiciones_view')
+                ->where('Ejercicio', $request->Ejercicio)
+                ->where('IDRequisicion', $request->IDRequisicion)
+                ->first();
+            $products = DB::table('products_details')
+                ->where('Ejercicio', $request->Ejercicio)
+                ->where('id', $request->Id)
+                ->get();
+            return ApiResponse::success(['pdfData' => $pdfData, 'products' => $products], 'PDF obtenido con éxito');
         } catch (Exception $e) {
             return ApiResponse::error($e->getMessage(), 500);
         }

@@ -96,6 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::prefix('/reportes')->group(function () {
         Route::post('/relaciongastos', [ReportesController::class, 'relacionGastos']);
+        Route::post('/requisicionpdf', [ReportesController::class, 'requisicionPdf']);
     });
     Route::prefix('/departaments')->group(function () {
         Route::get('/index', [DepartamentsController::class, 'index']);
