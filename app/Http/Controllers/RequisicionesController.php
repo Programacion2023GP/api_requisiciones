@@ -45,8 +45,10 @@ class   RequisicionesController extends Controller
 
                 $folio = Requisiciones::where('Ejercicio', date('Y'))->lockForUpdate()->max('IDRequisicion') ?? 0;
                 $requisicion->IDRequisicion = $folio + 1;
-                $requisicion->Status = Auth::user()->Rol == "DIRECTOR" ? "AU" : "CP";
-                if (Auth::user()->Rol == "DIRECTOR") {
+                // DIRECTOR y MASTER crean la requisición ya autorizada
+                $autorizaAlCrear = in_array(Auth::user()->Rol, ["DIRECTOR", "MASTER"]);
+                $requisicion->Status = $autorizaAlCrear ? "AU" : "CP";
+                if ($autorizaAlCrear) {
                     # code...
                     $requisicion->UsuarioAU = Auth::user()->Usuario;
                     $requisicion->FechaAutorizacion = date('Y-m-d H:i:s');
@@ -396,6 +398,10 @@ class   RequisicionesController extends Controller
 
                     break;
                 case "CA":
+                    // Guardar el estatus que tenía para poder descancelar
+                    if ($requisicion->Status !== 'CA') {
+                        $requisicion->StatusAnterior = $requisicion->Status;
+                    }
                     $requisicion->Motivo_Cancelacion =  $request->Motivo_Cancelacion;
                     $requisicion->UsuarioCA = Auth::user()->Usuario;
                     $requisicion->FechaCancelacion =  now();
@@ -531,6 +537,10 @@ class   RequisicionesController extends Controller
 
                     break;
                 case "CA":
+                    // Guardar el estatus que tenía para poder descancelar
+                    if ($requisicion->Status !== 'CA') {
+                        $requisicion->StatusAnterior = $requisicion->Status;
+                    }
                     $requisicion->FechaCancelacion = now();
                     $requisicion->UsuarioCA = Auth::user()->Usuario;
                     $requisicion->Status = $request->status;
@@ -795,6 +805,64 @@ class   RequisicionesController extends Controller
      * Bloquea la petición si el usuario autenticado tiene el rol AUDITOR (solo lectura).
      * Devuelve una respuesta de error 403, o null si puede continuar.
      */
+    /**
+     * Descancelar: regresa una requisición cancelada (CA) al estatus que tenía.
+     * Requiere el permiso de menú "DescancelarRequis".
+     */
+    public function descancelar(Request $request)
+    {
+        try {
+            if ($response = $this->bloquearAuditor()) {
+                return $response;
+            }
+
+            $permiso = DB::table('relmenuusuario')
+                ->where('Usuario', Auth::user()->Usuario)
+                ->where('IdMenu', 'DescancelarRequis')
+                ->where('Permiso', 'S')
+                ->exists();
+            if (!$permiso) {
+                return ApiResponse::error('No tienes permiso para descancelar requisiciones', 403);
+            }
+
+            $requisicion = Requisiciones::find($request->id);
+            if (!$requisicion) {
+                return ApiResponse::error('Requisición no encontrada', 404);
+            }
+            if ($requisicion->Status !== 'CA') {
+                return ApiResponse::error('La requisición no está cancelada', 400);
+            }
+
+            $requisicion->Status = self::estatusPrevio($requisicion);
+            $requisicion->StatusAnterior = null;
+            $requisicion->Motivo_Cancelacion = null;
+            $requisicion->UsuarioCA = null;
+            $requisicion->FechaCancelacion = null;
+            $requisicion->update();
+
+            return ApiResponse::success($requisicion, 'Requisición descancelada con éxito');
+        } catch (Exception $e) {
+            Log::error('Error al descancelar: ' . $e->getMessage());
+            return ApiResponse::error($e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Estatus al que regresa: el guardado al cancelar; si no existe (canceladas antes
+     * de este cambio) se deduce por los usuarios que la fueron avanzando.
+     */
+    public static function estatusPrevio($r): string
+    {
+        if (!empty($r->StatusAnterior) && $r->StatusAnterior !== 'CA') {
+            return $r->StatusAnterior;
+        }
+        if (!empty($r->UsuarioOC)) return 'OC';
+        if (!empty($r->UsuarioCO)) return 'CO';
+        if (!empty($r->UsuarioAS)) return 'AS';
+        if (!empty($r->UsuarioAU)) return 'AU';
+        return 'CP';
+    }
+
     private function bloquearAuditor()
     {
         $user = Auth::user();
