@@ -40,6 +40,10 @@ class ReportesController extends Controller
             $productos = DB::table('products_details')
                 ->whereIn('id', $requisiciones->pluck('Id')->all())
                 ->get()
+                // Evita contar dos veces el mismo producto si la vista lo repite
+                ->unique(function ($p) {
+                    return isset($p->IDDetalle) ? $p->IDDetalle : json_encode($p);
+                })
                 ->groupBy(function ($p) {
                     return $p->id . '-' . $p->Ejercicio;
                 });
