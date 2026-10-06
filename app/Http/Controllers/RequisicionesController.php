@@ -304,10 +304,10 @@ class   RequisicionesController extends Controller
                 $sql = DB::raw($consulta);
 
 
-                $query = DB::table('requisiciones_view')->distinct()->whereRaw($sql)->orderBy('Id', 'desc');
+                $query = DB::table('requisiciones_view')->whereRaw($sql)->orderBy('Id', 'desc');
             } else {
                 // Si no se pasa una consulta SQL personalizada, se obtienen todas las requisiciones
-                $query = DB::table('requisiciones_view')->distinct();
+                $query = DB::table('requisiciones_view');
             }
             $requisiciones = $query
                 ->get()
