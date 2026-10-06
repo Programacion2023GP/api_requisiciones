@@ -17,10 +17,16 @@ class ReportesController extends Controller
     public function relacionGastos(Request $request)
     {
         try {
+            // Mismo cálculo que el PDF: (PrecioSinIva x Cantidad) + IVA - Retenciones, del proveedor seleccionado
             $precio = "CASE
                 WHEN d.Proveedor = d.IDproveedor1 THEN d.PrecioUnitarioConIva1
                 WHEN d.Proveedor = d.IDproveedor2 THEN d.PrecioUnitarioConIva2
                 WHEN d.Proveedor = d.IDproveedor3 THEN d.PrecioUnitarioConIva3
+                ELSE 0 END";
+            $neto = "CASE
+                WHEN d.Proveedor = d.IDproveedor1 THEN (IFNULL(d.PrecioUnitarioSinIva1,0) * IFNULL(d.Cantidad,0) * (1 + IFNULL(d.PorcentajeIVA1,0)/100) - IFNULL(d.Retenciones1,0))
+                WHEN d.Proveedor = d.IDproveedor2 THEN (IFNULL(d.PrecioUnitarioSinIva2,0) * IFNULL(d.Cantidad,0) * (1 + IFNULL(d.PorcentajeIVA2,0)/100) - IFNULL(d.Retenciones2,0))
+                WHEN d.Proveedor = d.IDproveedor3 THEN (IFNULL(d.PrecioUnitarioSinIva3,0) * IFNULL(d.Cantidad,0) * (1 + IFNULL(d.PorcentajeIVA3,0)/100) - IFNULL(d.Retenciones3,0))
                 ELSE 0 END";
 
             $query = DB::table('det_requisicion as d')
@@ -40,7 +46,7 @@ class ReportesController extends Controller
                     'd.Descripcion',
                     'd.Cantidad',
                     DB::raw("($precio) as PrecioUnitarioConIva"),
-                    DB::raw("(IFNULL(d.Cantidad,0) * IFNULL(($precio),0)) as Importe")
+                    DB::raw("ROUND(($neto), 2) as Importe")
                 )
                 ->orderBy('r.Ejercicio')
                 ->orderBy('r.IDRequisicion');
