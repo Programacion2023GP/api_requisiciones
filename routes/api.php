@@ -8,6 +8,7 @@ use App\Http\Controllers\DetailsRequisicionesController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\MenuUserController;
 use App\Http\Controllers\ProvedoresController;
+use App\Http\Controllers\ReportesController;
 use App\Http\Controllers\RequisicionesController;
 use App\Http\Controllers\TiposController;
 use App\Http\Controllers\UsersController;
@@ -92,6 +93,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create', [ProvedoresController::class, 'create']);
         Route::post('/destroy', [ProvedoresController::class, 'destroy']);
         Route::put('/update', [ProvedoresController::class, 'update']);
+    });
+    Route::prefix('/reportes')->group(function () {
+        Route::post('/relaciongastos', [ReportesController::class, 'relacionGastos']);
     });
     Route::prefix('/departaments')->group(function () {
         Route::get('/index', [DepartamentsController::class, 'index']);
