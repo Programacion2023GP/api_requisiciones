@@ -29,6 +29,7 @@ class ReportesController extends Controller
                 WHEN d.Proveedor = d.IDproveedor3 THEN (IFNULL(d.PrecioUnitarioSinIva3,0) * IFNULL(d.Cantidad,0) * (1 + IFNULL(d.PorcentajeIVA3,0)/100) - IFNULL(d.Retenciones3,0))
                 ELSE 0 END";
 
+            DB::statement('SET SESSION group_concat_max_len = 100000');
             $query = DB::table('det_requisicion as d')
                 ->join('requisiciones as r', function ($join) {
                     $join->on('r.Ejercicio', '=', 'd.Ejercicio')
@@ -43,11 +44,10 @@ class ReportesController extends Controller
                     'r.Status',
                     'cd.Nombre_Departamento',
                     'r.Observaciones as Concepto',
-                    'd.Descripcion',
-                    'd.Cantidad',
-                    DB::raw("($precio) as PrecioUnitarioConIva"),
-                    DB::raw("ROUND(($neto), 2) as Importe")
+                    DB::raw("GROUP_CONCAT(CONCAT(d.Cantidad, ' - ', d.Descripcion) ORDER BY d.IDDetalle SEPARATOR ' | ') as Descripcion"),
+                    DB::raw("ROUND(SUM($neto), 2) as Importe")
                 )
+                ->groupBy('r.Id', 'r.IDRequisicion', 'r.Ejercicio', 'r.Status', 'cd.Nombre_Departamento', 'r.Observaciones')
                 ->orderBy('r.Ejercicio')
                 ->orderBy('r.IDRequisicion');
 
