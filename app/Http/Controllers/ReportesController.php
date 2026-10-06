@@ -30,7 +30,12 @@ class ReportesController extends Controller
             if ($request->filled('Ejercicio')) {
                 $query->where('Ejercicio', $request->Ejercicio);
             }
-            $requisiciones = $query->get();
+            // La vista puede repetir la misma requisición: dejar una sola por folio + ejercicio
+            $requisiciones = $query->get()
+                ->unique(function ($r) {
+                    return $r->IDRequisicion . '-' . $r->Ejercicio;
+                })
+                ->values();
 
             if ($requisiciones->isEmpty()) {
                 return ApiResponse::success([], 'Relación de gastos obtenida con éxito');
